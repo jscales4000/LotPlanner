@@ -129,26 +129,117 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     }))
   }, [])
 
-  // Reset canvas to center and default zoom
+  // Reset canvas to center and default zoom for 250k sq ft canvas
   const resetCanvas = useCallback(() => {
+    const defaultScale = 0.2 // 20% zoom for large canvas overview
+    const centerX = (stageSize.width / 2) - (CANVAS_SIZE_PIXELS / 2 * defaultScale)
+    const centerY = (stageSize.height / 2) - (CANVAS_SIZE_PIXELS / 2 * defaultScale)
+    
     if (stageRef.current) {
-      stageRef.current.scale({ x: 1, y: 1 })
-      stageRef.current.position({ x: 0, y: 0 })
+      stageRef.current.scale({ x: defaultScale, y: defaultScale })
+      stageRef.current.position({ x: centerX, y: centerY })
       stageRef.current.batchDraw()
-      
-      setCanvasState({
-        scale: 1,
-        x: 0,
-        y: 0
-      })
     }
-  }, [])
+    
+    setCanvasState({
+      scale: defaultScale,
+      x: centerX,
+      y: centerY
+    })
+  }, [stageSize, CANVAS_SIZE_PIXELS])
 
-  // Fit canvas to show all content (placeholder for future use)
+  // Fit canvas to show all equipment with proper centering and zoom
   const fitToContent = useCallback(() => {
-    // This will be implemented when we have objects to fit to
-    resetCanvas()
-  }, [resetCanvas])
+    console.log('=== FIT TO CONTENT CALLED ===')
+    console.log('placedEquipment:', placedEquipment)
+    
+    if (!placedEquipment || placedEquipment.length === 0) {
+      console.log('No equipment to fit to, resetting canvas')
+      resetCanvas()
+      return
+    }
+
+    // Calculate bounding box of all equipment including their clearance zones
+    let minX = Infinity, maxX = -Infinity
+    let minY = Infinity, maxY = -Infinity
+
+    placedEquipment.forEach(equipment => {
+      const equipmentDef = equipmentDefinitions?.find(def => def.id === equipment.equipmentId)
+      if (!equipmentDef) return
+
+      const dimensions = equipment.dimensions
+      const isCircular = dimensions.shape === 'circle'
+      
+      // Calculate equipment bounds including clearance
+      const clearance = equipmentDef.rideClearing || 0
+      const clearancePixels = clearance * PIXELS_PER_FOOT
+      
+      let equipmentMinX, equipmentMaxX, equipmentMinY, equipmentMaxY
+      
+      if (isCircular) {
+        const radius = (dimensions as any).radius * PIXELS_PER_FOOT
+        equipmentMinX = equipment.x - radius - clearancePixels
+        equipmentMaxX = equipment.x + radius + clearancePixels
+        equipmentMinY = equipment.y - radius - clearancePixels
+        equipmentMaxY = equipment.y + radius + clearancePixels
+      } else {
+        const width = (dimensions as any).width * PIXELS_PER_FOOT
+        const height = (dimensions as any).height * PIXELS_PER_FOOT
+        equipmentMinX = equipment.x - width/2 - clearancePixels
+        equipmentMaxX = equipment.x + width/2 + clearancePixels
+        equipmentMinY = equipment.y - height/2 - clearancePixels
+        equipmentMaxY = equipment.y + height/2 + clearancePixels
+      }
+      
+      minX = Math.min(minX, equipmentMinX)
+      maxX = Math.max(maxX, equipmentMaxX)
+      minY = Math.min(minY, equipmentMinY)
+      maxY = Math.max(maxY, equipmentMaxY)
+    })
+
+    // Add padding around the bounding box
+    const padding = 100 // 100 pixels padding
+    minX -= padding
+    maxX += padding
+    minY -= padding
+    maxY += padding
+
+    // Calculate the center of all equipment
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+
+    // Calculate required scale to fit all equipment in viewport
+    const contentWidth = maxX - minX
+    const contentHeight = maxY - minY
+    const scaleX = stageSize.width / contentWidth
+    const scaleY = stageSize.height / contentHeight
+    const optimalScale = Math.min(scaleX, scaleY, 2) // Cap at 2x zoom
+
+    // Calculate the position to center the content
+    const newX = (stageSize.width / 2) - (centerX * optimalScale)
+    const newY = (stageSize.height / 2) - (centerY * optimalScale)
+
+    // Apply the new view settings to both stage and state
+    console.log('Applying new canvas state:', {
+      scale: optimalScale,
+      x: newX,
+      y: newY,
+      contentBounds: { minX, maxX, minY, maxY },
+      center: { centerX, centerY }
+    })
+    
+    if (stageRef.current) {
+      stageRef.current.scale({ x: optimalScale, y: optimalScale })
+      stageRef.current.position({ x: newX, y: newY })
+      stageRef.current.batchDraw()
+    }
+    
+    setCanvasState({
+      scale: optimalScale,
+      x: newX,
+      y: newY
+    })
+  }, [placedEquipment, equipmentDefinitions, stageSize, resetCanvas])
 
   // Handle stage click to deselect equipment when clicking on empty canvas
   const handleStageClick = useCallback((e: any) => {
