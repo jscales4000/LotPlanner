@@ -1,0 +1,242 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Repository and Architecture",
+        "description": "Initialize the web application repository with a modern frontend framework and establish the basic project structure for the Site Planner application.",
+        "details": "Create a new repository with the following structure:\n- Use React.js for the frontend framework\n- Set up a serverless architecture as specified in constraints\n- Configure build tools (Webpack/Vite)\n- Establish folder structure for components, services, and assets\n- Set up linting and code formatting\n- Configure CI/CD pipeline for automated testing and deployment\n- Initialize package.json with required dependencies\n- Create README with project overview and setup instructions\n- Set up environment configuration for development, testing, and production",
+        "testStrategy": "Verify project builds successfully with no errors. Ensure all development scripts work as expected. Test the deployment pipeline with a simple Hello World component to confirm end-to-end workflow.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Canvas-Based Layout Editor Core",
+        "description": "Develop the core interactive 2D canvas that will serve as the foundation for the spatial planning functionality with basic zoom and pan capabilities.",
+        "details": "Implement the canvas using HTML5 Canvas or a library like Fabric.js or Konva.js:\n- Create a responsive canvas component that fills the available space\n- Implement zoom functionality with mouse wheel and touch pinch gestures\n- Add panning capability with mouse drag and touch gestures\n- Ensure smooth performance at 60fps as specified in requirements\n- Implement basic state management for canvas objects\n- Create a coordinate system that will support the measurement system\n- Add event listeners for mouse/touch interactions\n- Implement a basic rendering loop\n- Ensure canvas maintains aspect ratio during window resizing\n- Optimize for performance with large numbers of objects",
+        "testStrategy": "Test canvas performance with various object counts to ensure 60fps requirement is met. Verify zoom and pan functionality works across different browsers and devices. Measure initial load time to confirm it's under 3 seconds. Create automated tests for basic canvas operations.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Develop User Authentication System",
+        "description": "Create a secure authentication system using email-based magic links as specified in the requirements, with user account management functionality.",
+        "details": "Implement authentication using a serverless approach:\n- Set up authentication service (Auth0, Firebase Auth, or custom solution)\n- Create signup and login flows using magic links (passwordless)\n- Implement session management with secure tokens\n- Create user profile data structure in database\n- Add account management UI for profile updates\n- Implement secure routes/guards for authenticated content\n- Set up password reset functionality as fallback\n- Ensure HTTPS encryption for all traffic\n- Implement row-level security for user data\n- Add logout functionality\n- Create session timeout handling",
+        "testStrategy": "Test the complete authentication flow from signup to login to logout. Verify security of authentication tokens and session management. Test password reset functionality. Ensure user data is properly secured with row-level permissions. Perform security testing for common vulnerabilities.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Project Management System",
+        "description": "Create the project management functionality allowing users to create, save, load, and organize their spatial planning projects.",
+        "details": "Develop project management features:\n- Create data models for projects (metadata, canvas state, etc.)\n- Implement project creation with name, description, and settings\n- Add save functionality with automatic and manual options\n- Create project loading mechanism with thumbnails\n- Implement project listing UI with search and filters\n- Add folder organization capability\n- Create version history tracking\n- Implement project backup functionality\n- Add project sharing capabilities (read-only links)\n- Create project deletion with confirmation\n- Implement project duplication feature",
+        "testStrategy": "Test project creation, saving, and loading with various project sizes. Verify search and filtering functionality works correctly. Test version history by creating multiple versions and confirming correct restoration. Verify project sharing works across different users. Test performance with users having 100+ projects.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Build Equipment Library System",
+        "description": "Develop a comprehensive equipment library with pre-built items organized by categories, including accurate dimensions and visual representations.",
+        "details": "Create the equipment library system:\n- Design data structure for equipment items (dimensions, properties, metadata)\n- Create 50+ equipment items across required categories (Seating, Barriers, Stages, Utilities, Vehicles, Structures)\n- Implement visual representations for each item\n- Add category filtering and organization\n- Create UI for browsing and selecting equipment\n- Implement search functionality for equipment items\n- Add equipment metadata display\n- Create system for custom equipment creation\n- Implement equipment favorites or recently used items\n- Ensure accurate dimensions and clearance zones for each item\n- Add equipment specifications display",
+        "testStrategy": "Verify all 50+ equipment items render correctly with accurate dimensions. Test the category filtering and search functionality. Validate custom equipment creation and editing. Ensure equipment metadata is correctly displayed and updated. Test performance with large equipment libraries.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Drag-and-Drop Functionality",
+        "description": "Create the drag-and-drop interface for equipment placement on the canvas, including snap-to-grid and snap-to-object functionality.",
+        "details": "Implement drag-and-drop functionality:\n- Create drag initiation from equipment library to canvas\n- Implement object movement on canvas with mouse/touch\n- Add snap-to-grid functionality with customizable grid spacing\n- Implement snap-to-object for alignment with other items\n- Create visual feedback during dragging operations\n- Add rotation capability for equipment items\n- Implement object selection (single and multiple)\n- Create object deletion functionality\n- Add object duplication feature\n- Implement undo/redo functionality for placement operations\n- Create keyboard shortcuts for common operations",
+        "testStrategy": "Test drag-and-drop with various equipment items to ensure accurate placement. Verify snap-to-grid and snap-to-object functionality works correctly. Test selection, rotation, deletion, and duplication of objects. Validate undo/redo functionality for all operations. Test performance with many objects on canvas.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          5
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Develop Measurement System",
+        "description": "Create a precise measurement system with real-time distance calculations, area measurements, and support for multiple units.",
+        "details": "Implement the measurement system:\n- Create pixel-to-real-world unit conversion (feet, meters)\n- Implement real-time distance measurement between objects\n- Add area calculation for enclosed spaces\n- Create dimension annotations on canvas\n- Implement scale reference display\n- Add unit switching capability (feet/meters)\n- Create measurement tools for manual distance checking\n- Implement clearance zone visualization\n- Add grid overlay with measurement markings\n- Create measurement labels that update with object movement\n- Implement measurement precision controls",
+        "testStrategy": "Verify accuracy of measurements against known dimensions. Test unit conversion between feet and meters. Validate area calculations for various shapes. Test measurement updates during object movement and scaling. Ensure measurement tools work correctly across different zoom levels.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement Background Image Functionality",
+        "description": "Create the capability to import, position, and scale background images including satellite imagery and custom uploads.",
+        "details": "Develop background image functionality:\n- Implement image upload component with drag-and-drop\n- Create image positioning and scaling tools\n- Add satellite imagery import capability\n- Implement image layer management (multiple layers)\n- Create transparency and overlay controls\n- Add image cropping and rotation tools\n- Implement image caching for performance\n- Create background grid that works with images\n- Add image metadata preservation\n- Implement image removal functionality\n- Create image export as part of project",
+        "testStrategy": "Test image uploads of various formats and sizes. Verify positioning, scaling, and rotation work correctly. Test performance with large image files. Validate layer management with multiple images. Ensure images are correctly saved and loaded with projects.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Develop Export Capabilities",
+        "description": "Create professional export functionality including PDF generation with title blocks, legends, and high-resolution image exports.",
+        "details": "Implement export capabilities:\n- Create PDF generation using a library like jsPDF or PDF.js\n- Implement title blocks with customizable project information\n- Add equipment legends with specifications\n- Create scale bars and grid references\n- Implement high-resolution image export (PNG, JPEG)\n- Add print-ready formatting options\n- Create export settings UI (paper size, orientation, scale)\n- Implement batch export capability\n- Add custom header/footer options\n- Create export progress indicator\n- Implement export history",
+        "testStrategy": "Test PDF generation with various project sizes and complexities. Verify all elements (title blocks, legends, scale bars) appear correctly in exports. Test image exports at different resolutions. Validate print formatting across different paper sizes. Ensure exports complete within reasonable time frames.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          5,
+          6,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Implement Grid and Snapping System",
+        "description": "Create a customizable grid overlay with snapping functionality to facilitate precise object placement and alignment.",
+        "details": "Develop grid and snapping system:\n- Implement visible grid overlay on canvas\n- Create customizable grid spacing controls\n- Add snap-to-grid toggle functionality\n- Implement snap-to-object for alignment with other items\n- Create alignment guides for object positioning\n- Add grid visibility toggle\n- Implement different grid styles (lines, dots)\n- Create grid scale that updates with zoom level\n- Add grid color and opacity controls\n- Implement ruler guides along canvas edges\n- Create custom snap points for objects",
+        "testStrategy": "Test grid rendering at various spacings and zoom levels. Verify snapping functionality works correctly for different object types. Test alignment guides appear correctly during object movement. Validate grid customization options work as expected. Ensure grid performance remains smooth with many objects.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Responsive Design",
+        "description": "Create a responsive interface that works across desktop, tablet, and mobile devices with appropriate optimizations for each form factor.",
+        "details": "Develop responsive design:\n- Create responsive layout using CSS Grid/Flexbox\n- Implement desktop-optimized interface as primary experience\n- Add tablet compatibility with touch controls\n- Create mobile viewing experience with simplified controls\n- Implement touch gesture support (pinch zoom, swipe, etc.)\n- Add device detection for feature optimization\n- Create responsive component layouts\n- Implement collapsible panels for small screens\n- Add orientation change handling\n- Create responsive typography system\n- Test and optimize for cross-browser compatibility",
+        "testStrategy": "Test application on various devices (desktop, tablet, mobile) and browsers (Chrome, Firefox, Safari, Edge). Verify touch gestures work correctly on touch-enabled devices. Test orientation changes on mobile devices. Validate that all critical functionality is accessible across different screen sizes.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          4,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Implement Undo/Redo and History System",
+        "description": "Create a comprehensive undo/redo system with history tracking for all canvas operations to improve user workflow efficiency.",
+        "details": "Develop undo/redo functionality:\n- Implement command pattern for tracking operations\n- Create undo/redo stack management\n- Add keyboard shortcuts (Ctrl+Z, Ctrl+Y)\n- Implement UI controls for undo/redo\n- Create history panel showing recent actions\n- Add batch operation support for multiple changes\n- Implement history pruning for performance\n- Create state snapshots for efficient history\n- Add history export/import for debugging\n- Implement operation merging for similar consecutive actions\n- Create history search functionality",
+        "testStrategy": "Test undo/redo for all canvas operations (placement, movement, deletion, etc.). Verify history tracking works correctly for complex sequences of operations. Test keyboard shortcuts across different browsers. Validate performance with long operation histories. Ensure state is correctly restored for all object properties.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Implement Help System and Tooltips",
+        "description": "Create an intuitive help system with contextual tooltips, guided tours, and documentation to minimize the learning curve for new users.",
+        "details": "Develop help and documentation:\n- Create contextual tooltips for UI elements\n- Implement guided tour for first-time users\n- Add keyboard shortcut reference\n- Create searchable help documentation\n- Implement contextual help based on current activity\n- Add video tutorials for common tasks\n- Create interactive demos for key features\n- Implement help overlay system\n- Add frequently asked questions section\n- Create error messages with helpful suggestions\n- Implement feedback collection mechanism",
+        "testStrategy": "Test tooltips appear correctly for all UI elements. Verify guided tour works for new users. Test help documentation search functionality. Validate contextual help appears appropriately based on user actions. Ensure help content is accurate and up-to-date with current features.",
+        "priority": "low",
+        "dependencies": [
+          2,
+          4,
+          5,
+          6,
+          7,
+          9,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Implement Performance Optimization",
+        "description": "Optimize application performance to meet requirements for 60fps canvas operations, fast load times, and smooth handling of large projects.",
+        "details": "Develop performance optimizations:\n- Implement canvas rendering optimization techniques\n- Add object culling for off-screen items\n- Create level-of-detail rendering based on zoom\n- Implement asset preloading and caching\n- Add lazy loading for non-critical components\n- Create performance monitoring system\n- Implement code splitting for faster initial load\n- Add image optimization for uploads\n- Create worker threads for intensive operations\n- Implement virtualization for large object lists\n- Add performance settings for different devices",
+        "testStrategy": "Benchmark canvas performance with 100+ objects to verify 60fps requirement. Measure initial load time to confirm under 3-second target. Test zooming and panning performance at different zoom levels. Validate memory usage during extended editing sessions. Test performance on various devices and browsers.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          5,
+          6,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Implement Analytics and Error Tracking",
+        "description": "Add analytics and error tracking to monitor user engagement, feature adoption, and application stability for continuous improvement.",
+        "details": "Develop analytics and monitoring:\n- Implement analytics tracking (Google Analytics or similar)\n- Add custom event tracking for feature usage\n- Create error logging and reporting system\n- Implement performance metric collection\n- Add user flow tracking\n- Create dashboard for monitoring key metrics\n- Implement A/B testing framework\n- Add user feedback collection\n- Create automated error alerting\n- Implement session recording capability (opt-in)\n- Add privacy controls for data collection",
+        "testStrategy": "Verify analytics events are correctly tracked for key user actions. Test error logging by triggering known error conditions. Validate performance metrics are accurately collected. Ensure privacy controls work correctly and user data is anonymized appropriately. Test dashboard displays accurate information.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Implement Equipment Resizing Functionality",
+        "description": "Add equipment dimension editing capability to the equipment library, allowing users to customize width, height, and depth of equipment items before placing them on the canvas.",
+        "status": "done",
+        "dependencies": [
+          2,
+          5,
+          6
+        ],
+        "priority": "medium",
+        "details": "Implement equipment dimension editing functionality with the following components:\n\n1. Equipment Library UI Extensions:\n   - Add dimension input fields (width, height, depth) to the equipment library sidebar\n   - Implement real-time preview of equipment with custom dimensions\n   - Create visual indicators showing original vs. custom dimensions\n   - Ensure the UI is responsive and accessible\n\n2. Dimension Editing Interface:\n   - Implement numeric input fields with appropriate validation\n   - Add unit display and conversion if needed (feet/meters)\n   - Create increment/decrement controls for fine adjustments\n   - Implement minimum and maximum size constraints based on equipment type\n\n3. Aspect Ratio Controls:\n   - Add toggle for maintaining aspect ratio when changing dimensions\n   - Implement automatic recalculation of dependent dimensions when aspect ratio is locked\n   - Create visual indicator showing when aspect ratio is locked\n   - Store original aspect ratio with equipment items\n\n4. Custom Equipment Variants:\n   - Implement ability to save customized equipment as variants\n   - Create naming/labeling system for custom equipment variants\n   - Add management UI for organizing and selecting variants\n   - Implement deletion and editing of saved variants\n\n5. Preset Dimensions:\n   - Add common preset dimensions for different equipment types\n   - Implement quick-select buttons for standard sizes\n   - Create category-specific dimension presets\n   - Allow users to save their own dimension presets\n\n6. Clearance Zone Updates:\n   - Dynamically recalculate clearance zones based on custom dimensions\n   - Update visual representation of clearance zones in the preview\n   - Implement warnings for non-standard clearance requirements\n\n7. Integration with Drag-and-Drop:\n   - Ensure custom-sized equipment works correctly with existing drag-and-drop functionality\n   - Update placement preview to reflect custom dimensions\n   - Maintain custom dimensions during duplication operations\n\n8. Persistence:\n   - Update data structure to store custom dimensions and variants\n   - Ensure custom equipment is correctly saved and loaded with projects\n   - Implement efficient storage of variant data",
+        "testStrategy": "1. Functional Testing:\n   - Verify dimension input fields appear correctly in the equipment library\n   - Test input validation for all dimension fields\n   - Validate aspect ratio locking works correctly\n   - Confirm preview updates in real-time when dimensions are changed\n   - Test saving and loading custom equipment variants\n   - Verify preset dimensions can be applied correctly\n   - Test clearance zone updates with custom dimensions\n\n2. Integration Testing:\n   - Verify custom-sized equipment works correctly with drag-and-drop functionality\n   - Test that custom dimensions are preserved when equipment is placed on canvas\n   - Validate that custom equipment variants are correctly saved and loaded with projects\n   - Test interaction between standard and custom equipment items\n   - Verify duplication preserves custom dimensions\n\n3. Performance Testing:\n   - Measure rendering performance of equipment library with many custom variants\n   - Test performance when switching between different custom variants\n   - Verify memory usage remains stable with many custom equipment items\n\n4. Cross-browser/Device Testing:\n   - Test dimension editing across different browsers (Chrome, Firefox, Safari, Edge)\n   - Verify touch-based interaction works correctly on tablet devices\n   - Test keyboard input for dimension fields across platforms\n\n5. Edge Cases:\n   - Test creating very small and very large equipment dimensions\n   - Verify behavior when attempting to create dimensions outside allowed ranges\n   - Test creating many custom variants of the same equipment item\n   - Validate behavior when editing dimensions of complex equipment types",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-26T04:14:44.488Z",
+      "updated": "2025-07-26T06:54:35.617Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
