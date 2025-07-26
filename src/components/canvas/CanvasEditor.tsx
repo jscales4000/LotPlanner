@@ -13,6 +13,7 @@ interface CanvasEditorProps {
   className?: string
   onEquipmentAdd?: (equipment: EquipmentItem, x: number, y: number) => void
   placedEquipment?: PlacedEquipment[]
+  equipmentDefinitions?: EquipmentItem[]
   onEquipmentSelect?: (equipment: PlacedEquipment | null) => void
   onEquipmentMove?: (equipmentId: string, x: number, y: number) => void
   onEquipmentRotate?: (equipmentId: string, rotation: number) => void
@@ -27,11 +28,12 @@ interface CanvasState {
 }
 
 const CanvasEditor: React.FC<CanvasEditorProps> = ({
-  width = 800,
-  height = 600,
+  width = 1200,
+  height = 800,
   className = '',
   onEquipmentAdd,
   placedEquipment = [],
+  equipmentDefinitions,
   onEquipmentSelect,
   onEquipmentMove,
   onEquipmentRotate,
@@ -39,8 +41,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
   selectedEquipmentId
 }) => {
   const stageRef = useRef<Konva.Stage>(null)
+  
+  // Canvas configuration for 250,000 sq ft (500ft x 500ft)
+  const CANVAS_AREA_SQ_FT = 250000
+  const CANVAS_SIDE_FT = Math.sqrt(CANVAS_AREA_SQ_FT) // 500 feet
+  const PIXELS_PER_FOOT = 10 // Reduced from 50 to 10 for better performance with large areas
+  const CANVAS_SIZE_PIXELS = CANVAS_SIDE_FT * PIXELS_PER_FOOT // 5000 pixels
+  
   const [canvasState, setCanvasState] = useState<CanvasState>({
-    scale: 1,
+    scale: 0.2, // Start zoomed out to see more of the large area
     x: 0,
     y: 0
   })
@@ -183,8 +192,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
 
       {/* Canvas Info */}
       <div className="absolute bottom-4 left-4 z-10 bg-white bg-opacity-90 px-3 py-2 rounded shadow text-sm">
+        <div className="font-medium text-gray-800 mb-1">Canvas: 250,000 sq ft (500&apos; × 500&apos;)</div>
         <div>Zoom: {Math.round(canvasState.scale * 100)}%</div>
-        <div>Position: ({Math.round(canvasState.x)}, {Math.round(canvasState.y)})</div>
+        <div>Position: ({Math.round(canvasState.x / PIXELS_PER_FOOT)}&apos;&apos;, {Math.round(canvasState.y / PIXELS_PER_FOOT)}&apos;&apos;)</div>
+        <div className="text-xs text-gray-600 mt-1">Scale: {PIXELS_PER_FOOT} px/ft</div>
       </div>
 
       {/* Konva Stage */}
@@ -201,18 +212,19 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         <Layer>
           {/* Grid Layer */}
           <GridLayer
-            width={stageSize.width}
-            height={stageSize.height}
+            width={CANVAS_SIZE_PIXELS}
+            height={CANVAS_SIZE_PIXELS}
             scale={canvasState.scale}
             x={canvasState.x}
             y={canvasState.y}
             visible={gridVisible}
-            gridSize={50} // 50 pixels = 1 foot
+            gridSize={PIXELS_PER_FOOT} // 10 pixels = 1 foot for 250k sq ft canvas
           />
           
           {/* Equipment Layer */}
           <EquipmentLayer
             equipment={placedEquipment}
+            equipmentDefinitions={equipmentDefinitions}
             scale={canvasState.scale}
             onEquipmentSelect={onEquipmentSelect}
             onEquipmentMove={onEquipmentMove}
@@ -220,7 +232,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
             onEquipmentDelete={onEquipmentDelete}
             selectedEquipmentId={selectedEquipmentId}
             snapToGrid={true}
-            gridSize={50}
+            gridSize={PIXELS_PER_FOOT}
           />
           
           {/* Measurement Layer - will be implemented in future */}

@@ -1,12 +1,98 @@
 import { EquipmentItem, EquipmentLibrary } from './types'
 
 export const equipmentLibrary: EquipmentItem[] = [
-  // SEATING CATEGORY
+  // RIDES CATEGORY
+  {
+    id: 'freak-out',
+    name: 'Freak-Out',
+    category: 'rides',
+    dimensions: { shape: 'rectangle', width: 40, height: 40 },
+    clearance: { all: 10 },
+    color: '#FF6B6B',
+    description: 'High-intensity spinning ride with multiple arms',
+    specifications: { capacity: 24, weight: 15000 },
+    tags: ['thrill', 'spinning', 'outdoor'],
+    // New operational specification fields
+    weight: 15000,
+    capacity: 24,
+    turnAroundTime: 3,
+    verticalHeight: 45,
+    rideClearing: 25 // 25ft clearance zone for safety
+  },
+  {
+    id: 'merry-go-round',
+    name: 'Merry Go Round',
+    category: 'rides',
+    dimensions: { shape: 'circle', radius: 25 },
+    clearance: { all: 8 },
+    color: '#FFD93D',
+    description: 'Classic carousel with painted horses',
+    specifications: { capacity: 32, weight: 12000 },
+    tags: ['family', 'classic', 'outdoor'],
+    // New operational specification fields
+    weight: 12000,
+    capacity: 32,
+    turnAroundTime: 2,
+    verticalHeight: 20,
+    rideClearing: 15 // 15ft clearance zone for safety
+  },
+  {
+    id: 'himalaya',
+    name: 'Himalaya',
+    category: 'rides',
+    dimensions: { shape: 'circle', radius: 30 },
+    clearance: { all: 12 },
+    color: '#4ECDC4',
+    description: 'Fast-spinning circular ride with music',
+    specifications: { capacity: 40, weight: 18000 },
+    tags: ['thrill', 'spinning', 'music'],
+    // New operational specification fields
+    weight: 18000,
+    capacity: 40,
+    turnAroundTime: 4,
+    verticalHeight: 25,
+    rideClearing: 20 // 20ft clearance zone for safety
+  },
+  {
+    id: 'popper',
+    name: 'Popper',
+    category: 'kiddy-rides',
+    dimensions: { shape: 'rectangle', width: 15, height: 20 },
+    clearance: { all: 6 },
+    color: '#95E1D3',
+    description: 'Gentle bouncing ride for children',
+    specifications: { capacity: 12, weight: 3500 },
+    tags: ['kids', 'gentle', 'bouncing'],
+    // New operational specification fields
+    weight: 3500,
+    capacity: 12,
+    turnAroundTime: 1.5,
+    verticalHeight: 8,
+    rideClearing: 10 // 10ft clearance zone for safety
+  },
+  {
+    id: 'tilt-a-whirl',
+    name: 'Tilt-A-Whirl',
+    category: 'rides',
+    dimensions: { shape: 'circle', radius: 22 },
+    clearance: { all: 8 },
+    color: '#A8E6CF',
+    description: 'Classic spinning ride with individual cars',
+    specifications: { capacity: 21, weight: 8500 },
+    tags: ['family', 'spinning', 'classic'],
+    // New operational specification fields
+    weight: 8500,
+    capacity: 21,
+    turnAroundTime: 2.5,
+    verticalHeight: 15,
+    rideClearing: 12 // 12ft clearance zone for safety
+  },
+  // EQUIPMENT CATEGORY
   {
     id: 'chair-folding',
     name: 'Folding Chair',
-    category: 'seating',
-    dimensions: { width: 1.5, height: 3 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 1.5, height: 3 },
     clearance: { all: 0.5 },
     color: '#8B4513',
     description: 'Standard folding chair for events',
@@ -16,8 +102,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'chair-plastic',
     name: 'Plastic Chair',
-    category: 'seating',
-    dimensions: { width: 1.5, height: 2.5 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 1.5, height: 2.5 },
     clearance: { all: 0.5 },
     color: '#4A90E2',
     description: 'Lightweight plastic chair',
@@ -25,10 +111,32 @@ export const equipmentLibrary: EquipmentItem[] = [
     tags: ['lightweight', 'outdoor', 'stackable']
   },
   {
+    id: 'table-round-4ft',
+    name: 'Round Table (4ft)',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 2 },
+    clearance: { all: 1.5 },
+    color: '#D2691E',
+    description: 'Round table seating 4-6 people',
+    specifications: { capacity: 6, weight: 45 },
+    tags: ['round', 'dining', 'indoor', 'outdoor']
+  },
+  {
+    id: 'table-round-6ft',
+    name: 'Round Table (6ft)',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 3 },
+    clearance: { all: 1.5 },
+    color: '#D2691E',
+    description: 'Round table seating 8-10 people',
+    specifications: { capacity: 10, weight: 65 },
+    tags: ['round', 'dining', 'indoor', 'outdoor']
+  },
+  {
     id: 'bench-8ft',
     name: '8ft Bench',
-    category: 'seating',
-    dimensions: { width: 8, height: 1.5 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 1.5 },
     clearance: { front: 2, back: 1 },
     color: '#8B4513',
     description: '8-foot wooden bench',
@@ -38,8 +146,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'bleacher-3tier',
     name: '3-Tier Bleacher',
-    category: 'seating',
-    dimensions: { width: 15, height: 8 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 15, height: 8 },
     clearance: { front: 3, back: 2 },
     color: '#A0A0A0',
     description: '3-tier aluminum bleacher',
@@ -49,8 +157,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'bleacher-5tier',
     name: '5-Tier Bleacher',
-    category: 'seating',
-    dimensions: { width: 15, height: 12 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 15, height: 12 },
     clearance: { front: 4, back: 2 },
     color: '#A0A0A0',
     description: '5-tier aluminum bleacher',
@@ -60,8 +168,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'picnic-table',
     name: 'Picnic Table',
-    category: 'seating',
-    dimensions: { width: 6, height: 8 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 6, height: 8 },
     clearance: { all: 2 },
     color: '#8B4513',
     description: 'Standard picnic table with benches',
@@ -73,8 +181,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'fence-panel-8ft',
     name: '8ft Fence Panel',
-    category: 'barriers',
-    dimensions: { width: 8, height: 0.5 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 0.5 },
     clearance: { all: 0.5 },
     color: '#654321',
     description: '8-foot wooden fence panel',
@@ -84,8 +192,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'chain-link-panel',
     name: 'Chain Link Panel',
-    category: 'barriers',
-    dimensions: { width: 8, height: 0.5 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 0.5 },
     clearance: { all: 0.5 },
     color: '#C0C0C0',
     description: '8-foot chain link fence panel',
@@ -95,8 +203,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'crowd-barrier',
     name: 'Crowd Control Barrier',
-    category: 'barriers',
-    dimensions: { width: 8, height: 1 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 1 },
     clearance: { all: 1 },
     color: '#FFD700',
     description: 'Steel crowd control barrier',
@@ -106,8 +214,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'jersey-barrier',
     name: 'Jersey Barrier',
-    category: 'barriers',
-    dimensions: { width: 12, height: 2 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 12, height: 2 },
     clearance: { all: 1 },
     color: '#808080',
     description: 'Concrete jersey barrier',
@@ -117,8 +225,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'gate-single',
     name: 'Single Gate',
-    category: 'barriers',
-    dimensions: { width: 4, height: 0.5 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 4, height: 0.5 },
     clearance: { front: 4, all: 0.5 },
     color: '#654321',
     description: '4-foot wide gate',
@@ -128,8 +236,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'gate-double',
     name: 'Double Gate',
-    category: 'barriers',
-    dimensions: { width: 8, height: 0.5 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 0.5 },
     clearance: { front: 4, all: 0.5 },
     color: '#654321',
     description: '8-foot wide double gate',
@@ -141,8 +249,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'stage-4x8',
     name: '4x8 Stage Platform',
-    category: 'stages',
-    dimensions: { width: 4, height: 8 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 4, height: 8 },
     clearance: { all: 2 },
     color: '#2F4F4F',
     description: '4x8 foot stage platform',
@@ -152,8 +260,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'stage-8x8',
     name: '8x8 Stage Platform',
-    category: 'stages',
-    dimensions: { width: 8, height: 8 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 8 },
     clearance: { all: 3 },
     color: '#2F4F4F',
     description: '8x8 foot stage platform',
@@ -163,8 +271,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'stage-riser-2ft',
     name: '2ft Stage Riser',
-    category: 'stages',
-    dimensions: { width: 8, height: 4 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 4 },
     clearance: { all: 1 },
     color: '#2F4F4F',
     description: '2-foot high stage riser',
@@ -174,8 +282,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'bandshell',
     name: 'Bandshell',
-    category: 'stages',
-    dimensions: { width: 20, height: 15 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 20, height: 15 },
     clearance: { front: 5, back: 3, left: 3, right: 3 },
     color: '#2F4F4F',
     description: 'Large outdoor bandshell',
@@ -187,8 +295,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'power-box',
     name: 'Power Distribution Box',
-    category: 'utilities',
-    dimensions: { width: 2, height: 2 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 2, height: 2 },
     clearance: { all: 3 },
     color: '#FF4500',
     description: 'Electrical power distribution box',
@@ -198,8 +306,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'generator-small',
     name: 'Small Generator',
-    category: 'utilities',
-    dimensions: { width: 3, height: 2 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 3, height: 2 },
     clearance: { all: 5 },
     color: '#FF4500',
     description: '5kW portable generator',
@@ -209,8 +317,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'generator-large',
     name: 'Large Generator',
-    category: 'utilities',
-    dimensions: { width: 6, height: 4 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 6, height: 4 },
     clearance: { all: 8 },
     color: '#FF4500',
     description: '20kW trailer-mounted generator',
@@ -220,8 +328,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'water-tank',
     name: 'Water Tank',
-    category: 'utilities',
-    dimensions: { width: 4, height: 4 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 4, height: 4 },
     clearance: { all: 2 },
     color: '#4169E1',
     description: '500-gallon water tank',
@@ -231,8 +339,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'dumpster',
     name: 'Dumpster',
-    category: 'utilities',
-    dimensions: { width: 8, height: 6 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 6 },
     clearance: { all: 3 },
     color: '#228B22',
     description: '10-yard dumpster',
@@ -242,8 +350,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'porta-potty',
     name: 'Porta Potty',
-    category: 'utilities',
-    dimensions: { width: 4, height: 4 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 4, height: 4 },
     clearance: { front: 3, all: 1 },
     color: '#32CD32',
     description: 'Standard portable restroom',
@@ -255,8 +363,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'pickup-truck',
     name: 'Pickup Truck',
-    category: 'vehicles',
-    dimensions: { width: 6, height: 18 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 6, height: 18 },
     clearance: { all: 2 },
     color: '#B22222',
     description: 'Standard pickup truck',
@@ -266,8 +374,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'semi-truck',
     name: 'Semi Truck & Trailer',
-    category: 'vehicles',
-    dimensions: { width: 8.5, height: 53 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8.5, height: 53 },
     clearance: { all: 5 },
     color: '#B22222',
     description: 'Semi truck with 53ft trailer',
@@ -277,8 +385,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'rv-class-a',
     name: 'Class A RV',
-    category: 'vehicles',
-    dimensions: { width: 8, height: 35 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 35 },
     clearance: { all: 3 },
     color: '#B22222',
     description: 'Large Class A motorhome',
@@ -288,8 +396,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'fire-truck',
     name: 'Fire Truck',
-    category: 'vehicles',
-    dimensions: { width: 8, height: 30 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 30 },
     clearance: { all: 5 },
     color: '#DC143C',
     description: 'Emergency fire truck',
@@ -299,8 +407,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'ambulance',
     name: 'Ambulance',
-    category: 'vehicles',
-    dimensions: { width: 7, height: 20 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 7, height: 20 },
     clearance: { all: 3 },
     color: '#FFFFFF',
     description: 'Emergency ambulance',
@@ -312,8 +420,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'tent-10x10',
     name: '10x10 Tent',
-    category: 'structures',
-    dimensions: { width: 10, height: 10 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 10, height: 10 },
     clearance: { all: 2 },
     color: '#FFFFFF',
     description: '10x10 foot popup tent',
@@ -323,8 +431,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'tent-20x20',
     name: '20x20 Tent',
-    category: 'structures',
-    dimensions: { width: 20, height: 20 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 20, height: 20 },
     clearance: { all: 3 },
     color: '#FFFFFF',
     description: '20x20 foot frame tent',
@@ -334,8 +442,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'tent-40x60',
     name: '40x60 Tent',
-    category: 'structures',
-    dimensions: { width: 40, height: 60 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 40, height: 60 },
     clearance: { all: 5 },
     color: '#FFFFFF',
     description: '40x60 foot pole tent',
@@ -345,8 +453,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'gazebo',
     name: 'Gazebo',
-    category: 'structures',
-    dimensions: { width: 12, height: 12 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 12, height: 12 },
     clearance: { all: 2 },
     color: '#8B4513',
     description: 'Wooden gazebo structure',
@@ -356,8 +464,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'pavilion',
     name: 'Pavilion',
-    category: 'structures',
-    dimensions: { width: 20, height: 30 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 20, height: 30 },
     clearance: { all: 3 },
     color: '#8B4513',
     description: 'Large outdoor pavilion',
@@ -369,8 +477,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'light-tower',
     name: 'Light Tower',
-    category: 'lighting',
-    dimensions: { width: 6, height: 6 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 6, height: 6 },
     clearance: { all: 10 },
     color: '#FFFF00',
     description: 'Portable light tower',
@@ -380,8 +488,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'string-lights',
     name: 'String Light Poles',
-    category: 'lighting',
-    dimensions: { width: 2, height: 2 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 2, height: 2 },
     clearance: { all: 1 },
     color: '#FFFF00',
     description: 'String light support poles',
@@ -393,8 +501,8 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'speaker-tower',
     name: 'Speaker Tower',
-    category: 'sound',
-    dimensions: { width: 3, height: 3 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 3, height: 3 },
     clearance: { all: 5 },
     color: '#000000',
     description: 'Professional speaker tower',
@@ -404,26 +512,84 @@ export const equipmentLibrary: EquipmentItem[] = [
   {
     id: 'sound-booth',
     name: 'Sound Booth',
-    category: 'sound',
-    dimensions: { width: 8, height: 6 },
+    category: 'equipment',
+    dimensions: { shape: 'rectangle', width: 8, height: 6 },
     clearance: { all: 2 },
     color: '#2F4F4F',
     description: 'Sound mixing booth',
     specifications: { height: 8, weight: 300 },
     tags: ['sound', 'booth', 'mixing']
+  },
+
+  // ADDITIONAL CIRCULAR EQUIPMENT
+  {
+    id: 'stage-circular-20ft',
+    name: 'Circular Stage (20ft)',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 10 },
+    clearance: { all: 3 },
+    color: '#8B4513',
+    description: 'Large circular performance stage',
+    specifications: { height: 4, weight: 800 },
+    tags: ['circular', 'performance', 'large']
+  },
+  {
+    id: 'fountain-decorative',
+    name: 'Decorative Fountain',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 4 },
+    clearance: { all: 2 },
+    color: '#4682B4',
+    description: 'Circular decorative water fountain',
+    specifications: { height: 3, weight: 500 },
+    tags: ['water', 'decorative', 'circular']
+  },
+  {
+    id: 'gazebo-circular',
+    name: 'Circular Gazebo',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 8 },
+    clearance: { all: 2 },
+    color: '#228B22',
+    description: 'Circular gazebo with seating',
+    specifications: { height: 12, weight: 600 },
+    tags: ['gazebo', 'circular', 'shelter']
+  },
+  {
+    id: 'planter-circular-large',
+    name: 'Large Circular Planter',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 3 },
+    clearance: { all: 1 },
+    color: '#8FBC8F',
+    description: 'Large circular planter for landscaping',
+    specifications: { height: 2, weight: 150 },
+    tags: ['planter', 'landscaping', 'circular']
+  },
+  {
+    id: 'spotlight-circular-area',
+    name: 'Circular Area Spotlight',
+    category: 'equipment',
+    dimensions: { shape: 'circle', radius: 1.5 },
+    clearance: { all: 0.5 },
+    color: '#FFD700',
+    description: 'Circular area lighting fixture',
+    specifications: { height: 8, weight: 25 },
+    tags: ['lighting', 'circular', 'area']
   }
 ]
 
 // Create organized library with categories
 export const organizedLibrary: Record<string, EquipmentItem[]> = {
-  seating: equipmentLibrary.filter(item => item.category === 'seating'),
-  barriers: equipmentLibrary.filter(item => item.category === 'barriers'),
-  stages: equipmentLibrary.filter(item => item.category === 'stages'),
-  utilities: equipmentLibrary.filter(item => item.category === 'utilities'),
-  vehicles: equipmentLibrary.filter(item => item.category === 'vehicles'),
-  structures: equipmentLibrary.filter(item => item.category === 'structures'),
-  lighting: equipmentLibrary.filter(item => item.category === 'lighting'),
-  sound: equipmentLibrary.filter(item => item.category === 'sound')
+  'mega-rides': equipmentLibrary.filter(item => item.category === 'mega-rides'),
+  'rides': equipmentLibrary.filter(item => item.category === 'rides'),
+  'kiddy-rides': equipmentLibrary.filter(item => item.category === 'kiddy-rides'),
+  'food': equipmentLibrary.filter(item => item.category === 'food'),
+  'games': equipmentLibrary.filter(item => item.category === 'games'),
+  'equipment': equipmentLibrary.filter(item => item.category === 'equipment'),
+  'office': equipmentLibrary.filter(item => item.category === 'office'),
+  'home': equipmentLibrary.filter(item => item.category === 'home'),
+  'bunks': equipmentLibrary.filter(item => item.category === 'bunks')
 }
 
 // Search function

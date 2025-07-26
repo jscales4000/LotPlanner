@@ -4,15 +4,11 @@ import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
+import EquipmentLibrary from '@/components/equipment/EquipmentLibrary'
 
 // Dynamically import CanvasEditor to avoid SSR issues with Konva
 const CanvasEditor = dynamic(
   () => import('@/components/canvas/CanvasEditor'),
-  { ssr: false }
-)
-
-const EquipmentLibrary = dynamic(
-  () => import('@/components/equipment/EquipmentLibrary'),
   { ssr: false }
 )
 
@@ -24,15 +20,22 @@ const KeyboardHandler = dynamic(
 export default function CanvasPage() {
   const [placedEquipment, setPlacedEquipment] = useState<PlacedEquipment[]>([])
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([])
+  const [equipmentDefinitions, setEquipmentDefinitions] = useState<EquipmentItem[]>([])
+
+  // Handle equipment definitions changes
+  const handleEquipmentDefinitionsChange = (definitions: EquipmentItem[]) => {
+    setEquipmentDefinitions(definitions)
+  }
 
   // Handle adding equipment to canvas
   const handleEquipmentSelect = (equipment: EquipmentItem) => {
-    // Add equipment to center of current view
+    // Add equipment to center of 250,000 sq ft canvas (500ft x 500ft = 2500 x 2500 pixels at 10px/ft)
+    const CANVAS_CENTER_PIXELS = 2500 // Center of 5000x5000 pixel canvas
     const newEquipment: PlacedEquipment = {
       id: `equipment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       equipmentId: equipment.id,
-      x: 400, // Center of typical canvas view
-      y: 300,
+      x: CANVAS_CENTER_PIXELS, // Center of 250k sq ft canvas
+      y: CANVAS_CENTER_PIXELS,
       rotation: 0,
       dimensions: equipment.dimensions, // Store the actual dimensions used (including custom ones)
       customLabel: undefined
@@ -139,7 +142,9 @@ export default function CanvasPage() {
       <div className="flex h-[calc(100vh-80px)]">
         {/* Left Sidebar - Equipment Library */}
         <EquipmentLibrary
+          key="equipment-library"
           onEquipmentSelect={handleEquipmentSelect}
+          onEquipmentDefinitionsChange={handleEquipmentDefinitionsChange}
           className="w-64"
         />
 
@@ -148,6 +153,7 @@ export default function CanvasPage() {
           <CanvasEditor 
             className="w-full h-full"
             placedEquipment={placedEquipment}
+            equipmentDefinitions={equipmentDefinitions}
             onEquipmentSelect={handleCanvasEquipmentSelect}
             onEquipmentMove={handleEquipmentMove}
             onEquipmentRotate={handleEquipmentRotate}

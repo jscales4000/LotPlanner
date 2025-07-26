@@ -1,8 +1,19 @@
-export interface EquipmentDimensions {
+export type EquipmentShape = 'rectangle' | 'circle'
+
+export interface RectangularDimensions {
+  shape: 'rectangle'
   width: number  // in feet
   height: number // in feet
   depth?: number // in feet (for 3D items)
 }
+
+export interface CircularDimensions {
+  shape: 'circle'
+  radius: number // in feet
+  depth?: number // in feet (for 3D items)
+}
+
+export type EquipmentDimensions = RectangularDimensions | CircularDimensions
 
 export interface EquipmentClearance {
   front?: number  // clearance in feet
@@ -23,20 +34,25 @@ export interface EquipmentItem {
   specifications?: Record<string, string | number>
   icon?: string
   tags?: string[]
-  capacity?: number
-  weight?: number // in pounds
-  cost?: number   // estimated cost
+  // Operational specifications
+  capacity?: number           // ride capacity (number of riders)
+  weight?: number            // weight in pounds
+  turnAroundTime?: number    // time in minutes for riders to get on/off
+  verticalHeight?: number    // height in feet
+  rideClearing?: number      // ride clearance in feet (different from safety clearance)
+  cost?: number              // estimated cost
 }
 
 export type EquipmentCategory = 
-  | 'seating'
-  | 'barriers'
-  | 'stages'
-  | 'utilities'
-  | 'vehicles'
-  | 'structures'
-  | 'lighting'
-  | 'sound'
+  | 'mega-rides'
+  | 'rides'
+  | 'kiddy-rides'
+  | 'food'
+  | 'games'
+  | 'equipment'
+  | 'office'
+  | 'home'
+  | 'bunks'
 
 export interface EquipmentLibrary {
   categories: Record<EquipmentCategory, EquipmentItem[]>

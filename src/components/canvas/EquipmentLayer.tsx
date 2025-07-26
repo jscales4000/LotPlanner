@@ -1,12 +1,13 @@
 'use client'
 
 import React from 'react'
-import { Group, Rect, Text } from 'react-konva'
-import { PlacedEquipment } from '@/lib/equipment/types'
+import { Group, Rect, Circle, Text } from 'react-konva'
+import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
 import { equipmentLibrary } from '@/lib/equipment/library'
 
 interface EquipmentLayerProps {
   equipment: PlacedEquipment[]
+  equipmentDefinitions?: EquipmentItem[] // All equipment definitions (static + custom)
   scale: number
   onEquipmentSelect?: (equipment: PlacedEquipment) => void
   onEquipmentMove?: (equipmentId: string, x: number, y: number) => void
@@ -19,6 +20,7 @@ interface EquipmentLayerProps {
 
 const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
   equipment,
+  equipmentDefinitions,
   scale,
   onEquipmentSelect,
   onEquipmentMove,
@@ -26,9 +28,9 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
   onEquipmentDelete,
   selectedEquipmentId,
   snapToGrid = true,
-  gridSize = 50
+  gridSize = 10
 }) => {
-  const pixelsPerFoot = 50 // 50 pixels = 1 foot
+  const pixelsPerFoot = 10 // 10 pixels = 1 foot for large 250k sq ft canvas
 
   // Snap position to grid
   const snapToGridPosition = (x: number, y: number) => {
@@ -72,11 +74,14 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
     }
   }
 
+  // Combine static library with custom equipment definitions
+  const allEquipmentDefinitions = equipmentDefinitions || equipmentLibrary
+
   return (
     <Group>
       {equipment.map(placedEquipment => {
-        // Find the equipment definition
-        const equipmentDef = equipmentLibrary.find(
+        // Find the equipment definition in combined definitions
+        const equipmentDef = allEquipmentDefinitions.find(
           item => item.id === placedEquipment.equipmentId
         )
         
@@ -84,8 +89,13 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
 
         const isSelected = selectedEquipmentId === placedEquipment.id
         // Use the stored dimensions (which include custom dimensions) instead of library lookup
-        const width = placedEquipment.dimensions.width * pixelsPerFoot
-        const height = placedEquipment.dimensions.height * pixelsPerFoot
+        const dimensions = placedEquipment.dimensions
+        const isCircular = dimensions.shape === 'circle'
+        
+        // Calculate size based on shape
+        const width = isCircular ? (dimensions as any).radius * 2 * pixelsPerFoot : (dimensions as any).width * pixelsPerFoot
+        const height = isCircular ? (dimensions as any).radius * 2 * pixelsPerFoot : (dimensions as any).height * pixelsPerFoot
+        const radius = isCircular ? (dimensions as any).radius * pixelsPerFoot : 0
 
         return (
           <Group
@@ -93,54 +103,81 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
             x={placedEquipment.x}
             y={placedEquipment.y}
             rotation={placedEquipment.rotation}
+            // Set rotation origin to center of the equipment
+            offsetX={isCircular ? 0 : width / 2}
+            offsetY={isCircular ? 0 : height / 2}
             draggable
             onClick={(e) => handleEquipmentClick(placedEquipment, e)}
             onDragEnd={(e) => handleDragEnd(placedEquipment.id, e)}
-            onKeyDown={(e) => handleKeyDown(placedEquipment.id, e)}
+            onKeyDown={(e: any) => handleKeyDown(placedEquipment.id, e)}
             tabIndex={0}
           >
-            {/* Equipment Rectangle */}
-            <Rect
-              width={width}
-              height={height}
-              fill={equipmentDef.color}
-              stroke={isSelected ? '#2563eb' : '#666666'}
-              strokeWidth={isSelected ? 3 : 1}
-              opacity={0.8}
-              cornerRadius={2}
-            />
+            {/* Equipment Shape - Rectangle or Circle */}
+            {isCircular ? (
+              <Circle
+                radius={radius}
+                fill={equipmentDef.color}
+                stroke={isSelected ? '#2563eb' : '#666666'}
+                strokeWidth={isSelected ? 3 : 1}
+                opacity={0.8}
+              />
+            ) : (
+              <Rect
+                x={-width / 2} // Center the rectangle around the rotation origin
+                y={-height / 2}
+                width={width}
+                height={height}
+                fill={equipmentDef.color}
+                stroke={isSelected ? '#2563eb' : '#666666'}
+                strokeWidth={isSelected ? 3 : 1}
+                opacity={0.8}
+                cornerRadius={2}
+              />
+            )}
 
             {/* Equipment Label */}
             <Text
               text={placedEquipment.customLabel || equipmentDef.name}
-              x={2}
-              y={2}
+              x={isCircular ? -radius + 2 : -width / 2 + 2}
+              y={isCircular ? -6 : -height / 2 + 2}
               fontSize={Math.max(10, 12 / scale)}
               fill={isSelected ? '#2563eb' : '#000000'}
               fontFamily="Arial"
+              fontStyle="bold"
               wrap="word"
-              width={width - 4}
-              height={height - 4}
+              width={isCircular ? (radius * 2) - 4 : width - 4}
+              height={isCircular ? 12 : height - 4}
               align="center"
               verticalAlign="middle"
+              listening={false}
             />
 
-            {/* Clearance Zone (when selected) */}
-            {isSelected && equipmentDef.clearance && (
-              <Rect
-                x={-((equipmentDef.clearance.all || equipmentDef.clearance.left || 0) * pixelsPerFoot)}
-                y={-((equipmentDef.clearance.all || equipmentDef.clearance.front || 0) * pixelsPerFoot)}
-                width={width + ((equipmentDef.clearance.all || 0) * 2 * pixelsPerFoot) || 
-                       width + ((equipmentDef.clearance.left || 0) + (equipmentDef.clearance.right || 0)) * pixelsPerFoot}
-                height={height + ((equipmentDef.clearance.all || 0) * 2 * pixelsPerFoot) || 
-                        height + ((equipmentDef.clearance.front || 0) + (equipmentDef.clearance.back || 0)) * pixelsPerFoot}
-                fill="transparent"
-                stroke="#ff6b6b"
-                strokeWidth={1}
-                dash={[5, 5]}
-                opacity={0.5}
-                listening={false}
-              />
+            {/* Ride Clearance Zone - Always visible if rideClearing is set */}
+            {equipmentDef.rideClearing && equipmentDef.rideClearing > 0 && (
+              isCircular ? (
+                <Circle
+                  radius={radius + (equipmentDef.rideClearing * pixelsPerFoot)}
+                  fill="rgba(255, 165, 0, 0.1)" // Light orange fill for clearance area
+                  stroke="#ff8c00" // Orange stroke
+                  strokeWidth={2}
+                  dash={[8, 4]} // Dashed line to distinguish from main equipment
+                  opacity={0.6}
+                  listening={false}
+                />
+              ) : (
+                <Rect
+                  x={-width / 2 - (equipmentDef.rideClearing * pixelsPerFoot)} // Center around rotation origin
+                  y={-height / 2 - (equipmentDef.rideClearing * pixelsPerFoot)}
+                  width={width + (equipmentDef.rideClearing * 2 * pixelsPerFoot)}
+                  height={height + (equipmentDef.rideClearing * 2 * pixelsPerFoot)}
+                  fill="rgba(255, 165, 0, 0.1)" // Light orange fill for clearance area
+                  stroke="#ff8c00" // Orange stroke
+                  strokeWidth={2}
+                  dash={[8, 4]} // Dashed line to distinguish from main equipment
+                  opacity={0.6}
+                  listening={false}
+                />
+              )
             )}
 
             {/* Selection Handles (when selected) */}
@@ -148,8 +185,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
               <>
                 {/* Corner handles for resizing */}
                 <Rect
-                  x={width - 4}
-                  y={height - 4}
+                  x={isCircular ? radius - 4 : width / 2 - 4} // Adjust for centered rotation origin
+                  y={isCircular ? radius - 4 : height / 2 - 4}
                   width={8}
                   height={8}
                   fill="#2563eb"
@@ -161,8 +198,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                 {/* Rotation handle */}
                 <Group>
                   <Rect
-                    x={width / 2 - 4}
-                    y={-20}
+                    x={-4} // Center the rotation handle
+                    y={isCircular ? -radius - 20 : -height / 2 - 20} // Position above the equipment
                     width={8}
                     height={8}
                     fill="#10b981"
@@ -179,8 +216,9 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                       const group = e.target.getParent()?.getParent()
                       if (!group) return
                       
-                      const centerX = group.x() + width / 2
-                      const centerY = group.y() + height / 2
+                      // With centered rotation origin, the group position IS the center
+                      const centerX = group.x()
+                      const centerY = group.y()
                       
                       const angle = Math.atan2(pointer.y - centerY, pointer.x - centerX)
                       const degrees = (angle * 180) / Math.PI + 90
@@ -190,8 +228,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                   />
                   {/* Rotation line */}
                   <Rect
-                    x={width / 2 - 0.5}
-                    y={-20}
+                    x={-0.5} // Center the rotation line
+                    y={isCircular ? -radius - 20 : -height / 2 - 20}
                     width={1}
                     height={20}
                     fill="#10b981"
@@ -201,8 +239,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                 
                 {/* Delete button */}
                 <Rect
-                  x={width - 12}
-                  y={-12}
+                  x={isCircular ? radius - 6 : width / 2 - 6} // Adjust for centered rotation origin
+                  y={isCircular ? -radius - 6 : -height / 2 - 6}
                   width={12}
                   height={12}
                   fill="#ef4444"
