@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
-import { EquipmentItem, EquipmentCategory, EquipmentDimensions, EquipmentShape, RectangularDimensions, CircularDimensions } from '@/lib/equipment/types'
+import { EquipmentItem, EquipmentCategory, EquipmentDimensions, EquipmentShape, RectangularDimensions, CircularDimensions, EquipmentClearance } from '@/lib/equipment/types'
 import { organizedLibrary, searchEquipment } from '@/lib/equipment/library'
+import ClearanceEditor from '@/components/canvas/ClearanceEditor'
 
 interface EquipmentLibraryProps {
   onEquipmentSelect: (equipment: EquipmentItem) => void
@@ -52,6 +53,8 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   const [customTurnAroundTime, setCustomTurnAroundTime] = useState<Record<string, number>>({})
   const [customVerticalHeight, setCustomVerticalHeight] = useState<Record<string, number>>({})
   const [customRideClearing, setCustomRideClearing] = useState<Record<string, number>>({})
+  const [customClearances, setCustomClearances] = useState<Record<string, EquipmentClearance>>({})
+  const [clearanceEditorOpen, setClearanceEditorOpen] = useState<string | null>(null)
   const [newEquipmentItems, setNewEquipmentItems] = useState<EquipmentItem[]>([])
   const [newEquipmentCounter, setNewEquipmentCounter] = useState(0)
 
@@ -205,7 +208,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
       name: 'New Equipment',
       category: 'equipment',
       dimensions: { shape: 'rectangle', width: 4, height: 4 },
-      clearance: { all: 2 },
+      clearance: { type: 'rectangular', all: 2 },
       color: '#6B7280',
       description: 'Custom equipment item',
       specifications: { capacity: 1 },
@@ -231,7 +234,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   }
 
   const handleEquipmentClick = (equipment: EquipmentItem) => {
-    // Create equipment with custom dimensions, category, name, and operational specs if they exist
+    // Create equipment with custom dimensions, category, name, operational specs, and clearance if they exist
     const customDims = customDimensions[equipment.id]
     const customCategory = customCategories[equipment.id]
     const customName = customNames[equipment.id]
@@ -240,6 +243,15 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
     const customTurnAroundTimeValue = customTurnAroundTime[equipment.id]
     const customVerticalHeightValue = customVerticalHeight[equipment.id]
     const customRideClearingValue = customRideClearing[equipment.id]
+    const customClearanceValue = customClearances[equipment.id]
+    
+    // Debug logging for clearance data
+    console.log('Equipment Library - handleEquipmentClick:', {
+      equipmentId: equipment.id,
+      equipmentName: equipment.name,
+      customClearanceValue,
+      hasCustomClearance: !!customClearanceValue
+    })
     
     const equipmentToPlace = {
       ...equipment,
@@ -250,8 +262,15 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
       ...(customCapacityValue !== undefined && { capacity: customCapacityValue }),
       ...(customTurnAroundTimeValue !== undefined && { turnAroundTime: customTurnAroundTimeValue }),
       ...(customVerticalHeightValue !== undefined && { verticalHeight: customVerticalHeightValue }),
-      ...(customRideClearingValue !== undefined && { rideClearing: customRideClearingValue })
+      ...(customRideClearingValue !== undefined && { rideClearing: customRideClearingValue }),
+      ...(customClearanceValue && { clearance: customClearanceValue })
     }
+    
+    console.log('Equipment Library - equipmentToPlace:', {
+      id: equipmentToPlace.id,
+      name: equipmentToPlace.name,
+      clearance: equipmentToPlace.clearance
+    })
     
     onEquipmentSelect(equipmentToPlace)
   }
@@ -693,6 +712,22 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                   />
                                 </div>
                               </div>
+                              
+                              {/* Custom Clearance Editor Button */}
+                              <div className="mt-4 pt-3 border-t border-blue-200">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setClearanceEditorOpen(equipment.id)
+                                  }}
+                                  className="w-full px-3 py-2 bg-purple-500 text-white text-xs rounded hover:bg-purple-600 transition-colors"
+                                >
+                                  🎯 Edit Custom Clearance Zone
+                                </button>
+                                <p className="text-xs text-blue-600 mt-1">
+                                  Create polygonal clearance zones with curves
+                                </p>
+                              </div>
                             </div>
                             
                             <div className="text-xs text-blue-700 mt-3">
@@ -705,7 +740,8 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                           <div>
                             <span className="font-medium">Category:</span>
                             <br />
-                            {categoryLabels[equipment.category]}
+                            {categoryLabels[customCategories[equipment.id] || equipment.category]}
+                            {customCategories[equipment.id] && <span className="text-blue-600"> (custom)</span>}
                           </div>
                           <div>
                             <span className="font-medium">Dimensions:</span>
@@ -769,9 +805,9 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             <div>
                               <span className="font-medium">Clearance:</span>
                               <br />
-                              {equipment.clearance.all ? 
-                                `${equipment.clearance.all}&apos; all sides` :
-                                'Custom'
+                              {equipment.clearance.type === 'rectangular' && equipment.clearance.all ? 
+                                `${equipment.clearance.all}' all sides` :
+                                equipment.clearance.type === 'custom' ? 'Custom polygon' : 'Custom'
                               }
                             </div>
                           )}
@@ -807,6 +843,31 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
           {filteredEquipment.length} item{filteredEquipment.length !== 1 ? 's' : ''} available
         </div>
       </div>
+      
+      {/* Clearance Editor Modal */}
+      {clearanceEditorOpen && (() => {
+        const equipment = filteredEquipment.find((eq: EquipmentItem) => eq.id === clearanceEditorOpen)
+        if (!equipment) return null
+        
+        const currentDims = customDimensions[equipment.id] || equipment.dimensions
+        const currentRideClearing = customRideClearing[equipment.id] || equipment.rideClearing || 0
+        const currentClearance = customClearances[equipment.id] || equipment.clearance
+        
+        return (
+          <ClearanceEditor
+            clearance={currentClearance}
+            dimensions={currentDims}
+            rideClearing={currentRideClearing}
+            onChange={(newClearance) => {
+              setCustomClearances(prev => ({
+                ...prev,
+                [equipment.id]: newClearance
+              }))
+            }}
+            onClose={() => setClearanceEditorOpen(null)}
+          />
+        )
+      })()}
     </div>
   )
 }
