@@ -10,6 +10,7 @@ import BackgroundImageManager from './BackgroundImageManager'
 import ScaleBar from './ScaleBar'
 import MeasurementTool, { type Measurement } from './MeasurementTool'
 import DistanceInputModal from './DistanceInputModal'
+import SimpleMeasurementTool, { SimpleMeasurement } from './SimpleMeasurementTool'
 import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
 
 interface CanvasEditorProps {
@@ -76,6 +77,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const [scaleBarVisible, setScaleBarVisible] = useState(true)
   const [measurementToolActive, setMeasurementToolActive] = useState(false)
   const [measurements, setMeasurements] = useState<Measurement[]>([])
+  const [activeMeasurementTool, setActiveMeasurementTool] = useState<'area' | 'perimeter' | 'distance' | null>(null)
+  const [simpleMeasurements, setSimpleMeasurements] = useState<SimpleMeasurement[]>([])
   const [showDistanceInput, setShowDistanceInput] = useState(false)
   const [distanceInputData, setDistanceInputData] = useState<{
     calculatedDistance: number;
@@ -297,15 +300,248 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     }
   }, [canvasState.x, canvasState.y, canvasState.scale, stageSize])
 
+  // Handle measurement tool clicks
+  const handleMeasurementToolClick = useCallback((x: number, y: number) => {
+    console.log('handleMeasurementToolClick called:', { x, y, activeMeasurementTool })
+    if (!activeMeasurementTool) return
+    
+    // Forward click to SimpleMeasurementTool via global handlers
+    const handlers = (window as any).measurementToolHandlers
+    console.log('Global handlers:', handlers)
+    if (handlers && handlers.handleClick) {
+      console.log('Calling handlers.handleClick')
+      handlers.handleClick(x, y)
+    } else {
+      console.log('No global handlers found')
+    }
+  }, [activeMeasurementTool])
+
+  // Handle double-click to complete area/perimeter measurements
+  const handleMeasurementToolDoubleClick = useCallback((x: number, y: number) => {
+    if (!activeMeasurementTool) return
+    
+    console.log('Double-click for measurement tool:', { x, y, activeMeasurementTool })
+    
+    // Find incomplete measurement
+    const currentMeasurement = simpleMeasurements.find(m => !m.completed)
+    if (!currentMeasurement || currentMeasurement.points.length < 2) return
+    
+    let value = 0
+    let label = ''
+    
+    if (activeMeasurementTool === 'area') {
+      // Calculate area using shoelace formula
+      if (currentMeasurement.points.length < 3) return
+      
+      let area = 0
+      const points = currentMeasurement.points
+      const n = points.length
+      
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n
+        area += points[i].x * points[j].y
+        area -= points[j].x * points[i].y
+      }
+      
+      area = Math.abs(area) / 2
+      value = area / (PIXELS_PER_FOOT * PIXELS_PER_FOOT) // Convert to square feet
+      label = `Area: ${value.toFixed(0)} sq ft`
+      
+    } else if (activeMeasurementTool === 'perimeter') {
+      // Calculate perimeter
+      let perimeter = 0
+      const points = currentMeasurement.points
+      
+      for (let i = 0; i < points.length - 1; i++) {
+        const dx = points[i + 1].x - points[i].x
+        const dy = points[i + 1].y - points[i].y
+        perimeter += Math.sqrt(dx * dx + dy * dy)
+      }
+      
+      // Close the perimeter (connect last point to first)
+      if (points.length > 2) {
+        const dx = points[0].x - points[points.length - 1].x
+        const dy = points[0].y - points[points.length - 1].y
+        perimeter += Math.sqrt(dx * dx + dy * dy)
+      }
+      
+      value = perimeter / PIXELS_PER_FOOT // Convert to feet
+      label = `Perimeter: ${value.toFixed(0)} ft`
+    }
+    
+    // Complete the measurement
+    const completedMeasurement: SimpleMeasurement = {
+      ...currentMeasurement,
+      value,
+      label,
+      completed: true
+    }
+    
+    setSimpleMeasurements(prev => 
+      prev.map(m => m.id === currentMeasurement.id ? completedMeasurement : m)
+    )
+    
+    console.log('Measurement completed:', completedMeasurement)
+  }, [activeMeasurementTool, simpleMeasurements, PIXELS_PER_FOOT])
+
+  // Handle canvas clicks for measurement tools
+  const handleCanvasClick = useCallback((x: number, y: number) => {
+    if (!activeMeasurementTool) return
+    
+    console.log('Canvas click for measurement tool (raw):', { x, y, activeMeasurementTool })
+    
+    // Transform screen coordinates to canvas coordinates
+    // Account for canvas zoom and pan
+    const canvasX = (x - canvasState.x) / canvasState.scale
+    const canvasY = (y - canvasState.y) / canvasState.scale
+    
+    console.log('Canvas click for measurement tool (transformed):', { canvasX, canvasY, canvasState })
+    
+    const newPoint = { x: canvasX, y: canvasY }
+    
+    if (simpleMeasurements.some(m => !m.completed)) {
+      // Continue existing measurement
+      const currentMeasurement = simpleMeasurements.find(m => !m.completed)
+      if (currentMeasurement) {
+        const updatedPoints = [...currentMeasurement.points, newPoint]
+        
+        // For distance tool, complete after 2 points
+        if (activeMeasurementTool === 'distance' && updatedPoints.length === 2) {
+          const distance = Math.sqrt(
+            Math.pow(updatedPoints[1].x - updatedPoints[0].x, 2) + 
+            Math.pow(updatedPoints[1].y - updatedPoints[0].y, 2)
+          ) / PIXELS_PER_FOOT
+          
+          const completedMeasurement: SimpleMeasurement = {
+            ...currentMeasurement,
+            points: updatedPoints,
+            value: distance,
+            label: `Distance: ${distance.toFixed(0)} ft`,
+            completed: true
+          }
+          
+          setSimpleMeasurements(prev => 
+            prev.map(m => m.id === currentMeasurement.id ? completedMeasurement : m)
+          )
+        } else {
+          // Update current measurement with new point
+          setSimpleMeasurements(prev => 
+            prev.map(m => m.id === currentMeasurement.id ? { ...m, points: updatedPoints } : m)
+          )
+        }
+      }
+    } else {
+      // Start new measurement
+      const newMeasurement: SimpleMeasurement = {
+        id: `${activeMeasurementTool}-${Date.now()}`,
+        type: activeMeasurementTool,
+        points: [newPoint],
+        value: 0,
+        label: '',
+        completed: false
+      }
+      
+      setSimpleMeasurements(prev => [...prev, newMeasurement])
+    }
+  }, [activeMeasurementTool, simpleMeasurements, PIXELS_PER_FOOT])
+  
   // Handle stage click to deselect equipment when clicking on empty canvas
   const handleStageClick = useCallback((e: any) => {
     // Check if we clicked on the stage itself (not on any equipment)
     const clickedOnEmpty = e.target === e.target.getStage()
+    
     if (clickedOnEmpty) {
+      const stage = e.target.getStage()
+      const pos = stage.getPointerPosition()
+      
+      // If a measurement tool is active, handle the click for measurement
+      if (activeMeasurementTool && pos) {
+        handleCanvasClick(pos.x, pos.y)
+        return
+      }
+      
+      // Otherwise, deselect equipment
       onEquipmentSelect?.(null)
       setSelectedBackgroundImageId(null)
     }
-  }, [onEquipmentSelect])
+  }, [onEquipmentSelect, activeMeasurementTool, handleCanvasClick])
+  
+  // Handle stage double click for measurement tools
+  const handleStageDoubleClick = useCallback((e: any) => {
+    if (!activeMeasurementTool) return
+    
+    const stage = e.target.getStage()
+    const pos = stage.getPointerPosition()
+    
+    if (pos) {
+      // Transform screen coordinates to canvas coordinates
+      const canvasX = (pos.x - canvasState.x) / canvasState.scale
+      const canvasY = (pos.y - canvasState.y) / canvasState.scale
+      
+      console.log('Double-click for measurement tool:', { x: canvasX, y: canvasY, activeMeasurementTool })
+      
+      // Complete the current measurement
+      setSimpleMeasurements(prev => {
+        const currentMeasurement = prev.find(m => !m.completed)
+        if (!currentMeasurement) return prev
+        
+        // Add the final point for area and perimeter measurements
+        if (activeMeasurementTool === 'area' || activeMeasurementTool === 'perimeter') {
+          const updatedPoints = [...currentMeasurement.points, { x: canvasX, y: canvasY }]
+          
+          // Calculate the measurement value
+          let value = 0
+          let label = ''
+          
+          if (activeMeasurementTool === 'area' && updatedPoints.length >= 3) {
+            // Calculate area using shoelace formula
+            let area = 0
+            for (let i = 0; i < updatedPoints.length; i++) {
+              const j = (i + 1) % updatedPoints.length
+              area += updatedPoints[i].x * updatedPoints[j].y
+              area -= updatedPoints[j].x * updatedPoints[i].y
+            }
+            area = Math.abs(area) / 2
+            
+            // Convert from pixels to square feet
+            const areaInSqFt = area / (PIXELS_PER_FOOT * PIXELS_PER_FOOT)
+            value = Math.round(areaInSqFt)
+            label = `Area: ${value.toLocaleString()} sq ft`
+          } else if (activeMeasurementTool === 'perimeter' && updatedPoints.length >= 2) {
+            // Calculate perimeter (sum of all segments + closing segment)
+            let perimeter = 0
+            for (let i = 0; i < updatedPoints.length - 1; i++) {
+              const dx = updatedPoints[i + 1].x - updatedPoints[i].x
+              const dy = updatedPoints[i + 1].y - updatedPoints[i].y
+              perimeter += Math.sqrt(dx * dx + dy * dy)
+            }
+            // Add closing segment
+            const dx = updatedPoints[0].x - updatedPoints[updatedPoints.length - 1].x
+            const dy = updatedPoints[0].y - updatedPoints[updatedPoints.length - 1].y
+            perimeter += Math.sqrt(dx * dx + dy * dy)
+            
+            // Convert from pixels to feet
+            const perimeterInFt = perimeter / PIXELS_PER_FOOT
+            value = Math.round(perimeterInFt)
+            label = `Perimeter: ${value.toLocaleString()} ft`
+          }
+          
+          console.log('Measurement completed:', { id: currentMeasurement.id, value, label, completed: true })
+          
+          return prev.map(m => 
+            m.id === currentMeasurement.id 
+              ? { ...m, points: updatedPoints, value, label, completed: true }
+              : m
+          )
+        }
+        
+        return prev
+      })
+      
+      // Deactivate the measurement tool
+      setActiveMeasurementTool(null)
+    }
+  }, [activeMeasurementTool, canvasState, PIXELS_PER_FOOT])
 
   // Background image management functions
   const handleBackgroundImageAdd = useCallback((image: Omit<BackgroundImage, 'id'>) => {
@@ -424,15 +660,56 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         </button>
         <button
           onClick={() => setMeasurementToolActive(!measurementToolActive)}
-          className={`px-3 py-1 border rounded shadow text-sm ${
-            measurementToolActive 
-              ? 'bg-orange-500 text-white border-orange-500' 
+          className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+            measurementToolActive
+              ? 'bg-orange-500 text-white'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
           }`}
           title="Toggle Measurement Tool"
         >
           📏 Measure
         </button>
+        
+        {/* Advanced Measurement Tools */}
+        <div className="flex space-x-1">
+          <button
+            onClick={() => setActiveMeasurementTool(activeMeasurementTool === 'area' ? null : 'area')}
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activeMeasurementTool === 'area'
+                ? 'bg-green-500 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+            title="Area Measurement Tool"
+          >
+            📐 Area
+          </button>
+          
+          <button
+            onClick={() => setActiveMeasurementTool(activeMeasurementTool === 'perimeter' ? null : 'perimeter')}
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activeMeasurementTool === 'perimeter'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+            title="Perimeter Measurement Tool"
+          >
+            📏 Perimeter
+          </button>
+          
+          <button
+            onClick={() => setActiveMeasurementTool(activeMeasurementTool === 'distance' ? null : 'distance')}
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              activeMeasurementTool === 'distance'
+                ? 'bg-amber-500 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+            title="Distance Measurement Tool"
+          >
+            📏 Distance
+          </button>
+          
+
+        </div>
       </div>
 
       {/* Canvas Info */}
@@ -448,10 +725,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         ref={stageRef}
         width={stageSize.width}
         height={stageSize.height}
-        draggable={!measurementToolActive}
+        draggable={!measurementToolActive && !activeMeasurementTool}
         onWheel={handleWheel}
         onDragEnd={handleDragEnd}
         onClick={handleStageClick}
+        onDblClick={handleStageDoubleClick}
         className="border border-gray-300 bg-gray-50"
         onContentMouseDown={() => {
           // Ensure canvas element is captured after stage is fully mounted
@@ -511,6 +789,20 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
               console.log('New measurement:', measurement);
             }}
             onShowDistanceInput={handleShowDistanceInput}
+          />
+          
+          {/* Simple Measurement Tools */}
+          <SimpleMeasurementTool
+            activeTool={activeMeasurementTool}
+            scale={canvasState.scale}
+            pixelsPerFoot={PIXELS_PER_FOOT}
+            measurements={simpleMeasurements}
+            onMeasurementComplete={(measurement) => {
+              setSimpleMeasurements(prev => [...prev, measurement])
+            }}
+            onMeasurementDelete={(id) => {
+              setSimpleMeasurements(prev => prev.filter(m => m.id !== id))
+            }}
           />
           
           {/* Scale Bar Overlay */}
