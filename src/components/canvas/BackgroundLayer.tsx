@@ -28,6 +28,7 @@ interface BackgroundLayerProps {
   selectedImageId?: string | null
   scale: number
   editable?: boolean
+  measurementToolActive?: boolean
 }
 
 const BackgroundLayer: React.FC<BackgroundLayerProps> = ({
@@ -37,7 +38,8 @@ const BackgroundLayer: React.FC<BackgroundLayerProps> = ({
   onImageSelect,
   selectedImageId,
   scale,
-  editable = true
+  editable = true,
+  measurementToolActive = false
 }) => {
   const [loadedImages, setLoadedImages] = useState<Map<string, HTMLImageElement>>(new Map())
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set())
@@ -156,7 +158,7 @@ const BackgroundLayer: React.FC<BackgroundLayerProps> = ({
               onTap={() => handleImageClick(bgImage.id)}
               onDragEnd={(e) => handleImageDragEnd(bgImage.id, e)}
               onTransformEnd={(e) => handleImageTransform(bgImage.id, e)}
-              listening={editable}
+              listening={editable && !measurementToolActive} // Disable listening when measurement tools are active
               filters={bgImage.locked ? [Konva.Filters.Grayscale] : undefined} // Grayscale when locked
             />
             

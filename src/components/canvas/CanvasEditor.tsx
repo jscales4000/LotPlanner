@@ -1091,6 +1091,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
           }
         }}
       >
+        {/* Background and Grid Layer */}
         <Layer>
           {/* Background Images Layer */}
           <BackgroundLayer
@@ -1101,6 +1102,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
             selectedImageId={selectedBackgroundImageId}
             scale={canvasState.scale}
             editable={true}
+            measurementToolActive={measurementToolActive || !!activeMeasurementTool}
           />
           
           {/* Grid Layer */}
@@ -1113,8 +1115,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
             visible={gridVisible}
             gridSize={PIXELS_PER_FOOT} // 10 pixels = 1 foot for 250k sq ft canvas
           />
-          
-          {/* Equipment Layer */}
+        </Layer>
+        
+        {/* Equipment Layer */}
+        <Layer>
           <EquipmentLayer
             equipment={placedEquipment}
             equipmentDefinitions={equipmentDefinitions}
@@ -1127,7 +1131,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
             snapToGrid={true}
             gridSize={PIXELS_PER_FOOT}
           />
-          
+        </Layer>
+        
+        {/* Measurement Tools Layer - Always on top */}
+        <Layer>
           {/* Enhanced Measurement Tool */}
           <EnhancedMeasurementTool
             isActive={measurementToolActive && !activeMeasurementTool}
