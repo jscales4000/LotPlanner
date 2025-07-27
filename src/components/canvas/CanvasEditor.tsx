@@ -5,6 +5,11 @@ import { Stage, Layer } from 'react-konva'
 import Konva from 'konva'
 import GridLayer from './GridLayer'
 import EquipmentLayer from './EquipmentLayer'
+import BackgroundLayer, { BackgroundImage } from './BackgroundLayer'
+import BackgroundImageManager from './BackgroundImageManager'
+import ScaleBar from './ScaleBar'
+import MeasurementTool, { type Measurement } from './MeasurementTool'
+import DistanceInputModal from './DistanceInputModal'
 import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
 
 interface CanvasEditorProps {
@@ -19,6 +24,11 @@ interface CanvasEditorProps {
   onEquipmentRotate?: (equipmentId: string, rotation: number) => void
   onEquipmentDelete?: (equipmentId: string) => void
   selectedEquipmentId?: string
+  backgroundImages?: BackgroundImage[]
+  onBackgroundImageAdd?: (image: Omit<BackgroundImage, 'id'>) => void
+  onBackgroundImageUpdate?: (imageId: string, updates: Partial<BackgroundImage>) => void
+  onBackgroundImageDelete?: (imageId: string) => void
+  onCanvasReady?: (canvasElement: HTMLElement) => void
 }
 
 interface CanvasState {
@@ -38,9 +48,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
   onEquipmentMove,
   onEquipmentRotate,
   onEquipmentDelete,
-  selectedEquipmentId
+  selectedEquipmentId,
+  backgroundImages = [],
+  onBackgroundImageAdd,
+  onBackgroundImageUpdate,
+  onBackgroundImageDelete,
+  onCanvasReady
 }) => {
   const stageRef = useRef<Konva.Stage>(null)
+  const [isClient, setIsClient] = useState(false)
   
   // Canvas configuration for 250,000 sq ft (500ft x 500ft)
   const CANVAS_AREA_SQ_FT = 250000
@@ -55,6 +71,35 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
   })
   const [stageSize, setStageSize] = useState({ width, height })
   const [gridVisible, setGridVisible] = useState(true)
+  const [backgroundManagerOpen, setBackgroundManagerOpen] = useState(false)
+  const [selectedBackgroundImageId, setSelectedBackgroundImageId] = useState<string | null>(null)
+  const [scaleBarVisible, setScaleBarVisible] = useState(true)
+  const [measurementToolActive, setMeasurementToolActive] = useState(false)
+  const [measurements, setMeasurements] = useState<Measurement[]>([])
+  const [showDistanceInput, setShowDistanceInput] = useState(false)
+  const [distanceInputData, setDistanceInputData] = useState<{
+    calculatedDistance: number;
+    onSubmit: (actualDistance: number) => void;
+    onCancel: () => void;
+  } | null>(null)
+
+  // Handle canvas ready callback
+  useEffect(() => {
+    if (isClient && onCanvasReady) {
+      // Use a timeout to ensure the stage is fully mounted
+      const timeout = setTimeout(() => {
+        if (stageRef.current) {
+          const container = stageRef.current.container()
+          if (container) {
+            console.log('Canvas ready, calling onCanvasReady with container:', container)
+            onCanvasReady(container)
+          }
+        }
+      }, 100) // Small delay to ensure stage is mounted
+      
+      return () => clearTimeout(timeout)
+    }
+  }, [onCanvasReady, isClient])
 
   // Handle window resize to make canvas responsive
   useEffect(() => {
@@ -241,14 +286,94 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     })
   }, [placedEquipment, equipmentDefinitions, stageSize, resetCanvas])
 
+  // Calculate visible bounds for performance optimization
+  const getVisibleBounds = useCallback(() => {
+    const buffer = 1000 // pixels buffer for smooth scrolling
+    return {
+      minX: (-canvasState.x / canvasState.scale) - buffer,
+      maxX: ((-canvasState.x + stageSize.width) / canvasState.scale) + buffer,
+      minY: (-canvasState.y / canvasState.scale) - buffer,
+      maxY: ((-canvasState.y + stageSize.height) / canvasState.scale) + buffer
+    }
+  }, [canvasState.x, canvasState.y, canvasState.scale, stageSize])
+
   // Handle stage click to deselect equipment when clicking on empty canvas
   const handleStageClick = useCallback((e: any) => {
     // Check if we clicked on the stage itself (not on any equipment)
     const clickedOnEmpty = e.target === e.target.getStage()
     if (clickedOnEmpty) {
       onEquipmentSelect?.(null)
+      setSelectedBackgroundImageId(null)
     }
   }, [onEquipmentSelect])
+
+  // Background image management functions
+  const handleBackgroundImageAdd = useCallback((image: Omit<BackgroundImage, 'id'>) => {
+    const imageWithId = {
+      ...image,
+      id: `bg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }
+    onBackgroundImageAdd?.(imageWithId)
+  }, [onBackgroundImageAdd])
+
+  const handleBackgroundImageSelect = (imageId: string | null) => {
+    setSelectedBackgroundImageId(imageId)
+  }
+
+  const calibrateImageScale = (actualDistance: number, calculatedDistance: number) => {
+    // Calculate the scale correction factor
+    const scaleCorrection = actualDistance / calculatedDistance
+    
+    // Apply the correction to all background images
+    backgroundImages.forEach(image => {
+      if (onBackgroundImageUpdate) {
+        onBackgroundImageUpdate(image.id, {
+          scaleX: image.scaleX * scaleCorrection,
+          scaleY: image.scaleY * scaleCorrection
+        })
+      }
+    })
+    
+    console.log(`Scale calibrated: ${scaleCorrection.toFixed(3)}x correction applied to ${backgroundImages.length} background images`)
+  }
+
+  const handleShowDistanceInput = (
+    calculatedDistance: number,
+    onSubmit: (actualDistance: number) => void,
+    onCancel: () => void
+  ) => {
+    setDistanceInputData({
+      calculatedDistance,
+      onSubmit: (actualDistance: number) => {
+        // Calibrate the image scale automatically
+        calibrateImageScale(actualDistance, calculatedDistance)
+        
+        onSubmit(actualDistance)
+        setShowDistanceInput(false)
+        setDistanceInputData(null)
+      },
+      onCancel: () => {
+        onCancel()
+        setShowDistanceInput(false)
+        setDistanceInputData(null)
+      }
+    })
+    setShowDistanceInput(true)
+  }
+
+  // Ensure client-side only rendering to prevent hydration mismatches
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // Don't render canvas during SSR to prevent hydration mismatches
+  if (!isClient) {
+    return (
+      <div className={`relative w-full h-full ${className} flex items-center justify-center bg-gray-50`}>
+        <div className="text-gray-500">Loading canvas...</div>
+      </div>
+    )
+  }
 
   return (
     <div className={`relative w-full h-full ${className}`}>
@@ -279,6 +404,35 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         >
           Grid
         </button>
+        <button
+          onClick={() => setBackgroundManagerOpen(true)}
+          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
+          title="Manage Background Images"
+        >
+          Images
+        </button>
+        <button
+          onClick={() => setScaleBarVisible(!scaleBarVisible)}
+          className={`px-3 py-1 border rounded shadow text-sm ${
+            scaleBarVisible 
+              ? 'bg-green-500 text-white border-green-500' 
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+          }`}
+          title="Toggle Scale Bar"
+        >
+          Scale
+        </button>
+        <button
+          onClick={() => setMeasurementToolActive(!measurementToolActive)}
+          className={`px-3 py-1 border rounded shadow text-sm ${
+            measurementToolActive 
+              ? 'bg-orange-500 text-white border-orange-500' 
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+          }`}
+          title="Toggle Measurement Tool"
+        >
+          📏 Measure
+        </button>
       </div>
 
       {/* Canvas Info */}
@@ -294,13 +448,34 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         ref={stageRef}
         width={stageSize.width}
         height={stageSize.height}
-        draggable
+        draggable={!measurementToolActive}
         onWheel={handleWheel}
         onDragEnd={handleDragEnd}
         onClick={handleStageClick}
         className="border border-gray-300 bg-gray-50"
+        onContentMouseDown={() => {
+          // Ensure canvas element is captured after stage is fully mounted
+          if (stageRef.current && onCanvasReady) {
+            const container = stageRef.current.container()
+            if (container) {
+              console.log('Stage mounted, capturing canvas element:', container)
+              onCanvasReady(container)
+            }
+          }
+        }}
       >
         <Layer>
+          {/* Background Images Layer */}
+          <BackgroundLayer
+            images={backgroundImages}
+            onImageUpdate={onBackgroundImageUpdate}
+            onImageDelete={onBackgroundImageDelete}
+            onImageSelect={handleBackgroundImageSelect}
+            selectedImageId={selectedBackgroundImageId}
+            scale={canvasState.scale}
+            editable={true}
+          />
+          
           {/* Grid Layer */}
           <GridLayer
             width={CANVAS_SIZE_PIXELS}
@@ -326,9 +501,49 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
             gridSize={PIXELS_PER_FOOT}
           />
           
-          {/* Measurement Layer - will be implemented in future */}
+          {/* Measurement Tool */}
+          <MeasurementTool
+            isActive={measurementToolActive}
+            scale={canvasState.scale}
+            pixelsPerFoot={PIXELS_PER_FOOT}
+            onMeasurementComplete={(measurement) => {
+              setMeasurements(prev => [...prev, measurement]);
+              console.log('New measurement:', measurement);
+            }}
+            onShowDistanceInput={handleShowDistanceInput}
+          />
+          
+          {/* Scale Bar Overlay */}
+          {scaleBarVisible && (
+            <ScaleBar
+              scale={canvasState.scale}
+              canvasWidth={stageSize.width}
+              canvasHeight={stageSize.height}
+              pixelsPerFoot={PIXELS_PER_FOOT}
+            />
+          )}
         </Layer>
       </Stage>
+      
+      {/* Background Image Manager Modal */}
+      <BackgroundImageManager
+        images={backgroundImages}
+        onImageAdd={handleBackgroundImageAdd}
+        onImageUpdate={onBackgroundImageUpdate || (() => {})}
+        onImageDelete={onBackgroundImageDelete || (() => {})}
+        onImageSelect={handleBackgroundImageSelect}
+        selectedImageId={selectedBackgroundImageId}
+        isOpen={backgroundManagerOpen}
+        onClose={() => setBackgroundManagerOpen(false)}
+      />
+      
+      {/* Distance Input Modal */}
+      <DistanceInputModal
+        isOpen={showDistanceInput}
+        calculatedDistance={distanceInputData?.calculatedDistance || 0}
+        onSubmit={distanceInputData?.onSubmit || (() => {})}
+        onCancel={distanceInputData?.onCancel || (() => {})}
+      />
     </div>
   )
 }

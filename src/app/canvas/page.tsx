@@ -1,10 +1,16 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
+import { BackgroundImage } from '@/components/canvas/BackgroundLayer'
+import { ProjectData, ImportResult } from '@/lib/project/types'
+import { ProjectManager } from '@/lib/project/projectManager'
 import EquipmentLibrary from '@/components/equipment/EquipmentLibrary'
+import ProjectManagerModal from '@/components/project/ProjectManagerModal'
+import ExportImportModal from '@/components/project/ExportImportModal'
+import PDFExportModal from '@/components/export/PDFExportModal'
 
 // Dynamically import CanvasEditor to avoid SSR issues with Konva
 const CanvasEditor = dynamic(
@@ -21,10 +27,134 @@ export default function CanvasPage() {
   const [placedEquipment, setPlacedEquipment] = useState<PlacedEquipment[]>([])
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([])
   const [equipmentDefinitions, setEquipmentDefinitions] = useState<EquipmentItem[]>([])
+  const [backgroundImages, setBackgroundImages] = useState<BackgroundImage[]>([])
+  
+  // Project management state
+  const [currentProject, setCurrentProject] = useState<ProjectData | null>(null)
+  const [projectManagerModalOpen, setProjectManagerModalOpen] = useState(false)
+  const [exportImportModalOpen, setExportImportModalOpen] = useState(false)
+  const [pdfExportModalOpen, setPdfExportModalOpen] = useState(false)
+  const [customEquipmentCount, setCustomEquipmentCount] = useState(0)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [canvasElement, setCanvasElement] = useState<HTMLElement | null>(null)
+
+  // Auto-save functionality
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (hasUnsavedChanges) {
+        ProjectManager.autoSave(
+          placedEquipment,
+          backgroundImages,
+          equipmentDefinitions,
+          customEquipmentCount
+        )
+      }
+    }, 30000) // Auto-save every 30 seconds
+
+    return () => clearInterval(autoSaveInterval)
+  }, [placedEquipment, backgroundImages, equipmentDefinitions, customEquipmentCount, hasUnsavedChanges])
+
+  // Mark as having unsaved changes when data changes
+  useEffect(() => {
+    setHasUnsavedChanges(true)
+  }, [placedEquipment, backgroundImages, equipmentDefinitions])
+
+  // Load auto-save on component mount
+  useEffect(() => {
+    const autoSaveData = ProjectManager.loadAutoSave()
+    if (autoSaveData && autoSaveData.placedEquipment.length > 0) {
+      const shouldRestore = confirm(
+        `Auto-saved data found from ${new Date(autoSaveData.timestamp).toLocaleString()}. Would you like to restore it?`
+      )
+      if (shouldRestore) {
+        setPlacedEquipment(autoSaveData.placedEquipment)
+        setBackgroundImages(autoSaveData.backgroundImages)
+        setEquipmentDefinitions(autoSaveData.equipmentDefinitions)
+        setCustomEquipmentCount(autoSaveData.customEquipmentCount)
+        setHasUnsavedChanges(true)
+      }
+    }
+  }, [])
+
+  // Project management handlers
+  const handleNewProject = (name: string, description?: string) => {
+    const newProject = ProjectManager.createNewProject(name, description)
+    setCurrentProject(newProject)
+    setPlacedEquipment([])
+    setBackgroundImages([])
+    setEquipmentDefinitions([])
+    setCustomEquipmentCount(0)
+    setSelectedEquipmentIds([])
+    setHasUnsavedChanges(false)
+    ProjectManager.clearAutoSave()
+  }
+
+  const handleSaveProject = (name: string, description?: string) => {
+    const projectData: ProjectData = {
+      metadata: {
+        id: currentProject?.metadata.id || `project_${Date.now()}`,
+        name,
+        description,
+        createdAt: currentProject?.metadata.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        version: '1.0.0',
+        author: 'Lot Planner User'
+      },
+      canvasSettings: {
+        width: 5000,
+        height: 5000,
+        pixelsPerFoot: 10,
+        gridSize: 50,
+        gridVisible: true,
+        scaleBarVisible: true,
+        measurementToolActive: false
+      },
+      placedEquipment,
+      backgroundImages,
+      equipmentDefinitions,
+      customEquipmentCount
+    }
+
+    const result = ProjectManager.saveProject(projectData)
+    if (result.success) {
+      setCurrentProject(projectData)
+      setHasUnsavedChanges(false)
+      alert('Project saved successfully!')
+    } else {
+      alert(`Failed to save project: ${result.error}`)
+    }
+  }
+
+  const handleLoadProject = (projectData: ProjectData) => {
+    setCurrentProject(projectData)
+    setPlacedEquipment(projectData.placedEquipment)
+    setBackgroundImages(projectData.backgroundImages)
+    setEquipmentDefinitions(projectData.equipmentDefinitions)
+    setCustomEquipmentCount(projectData.customEquipmentCount)
+    setSelectedEquipmentIds([])
+    setHasUnsavedChanges(false)
+    ProjectManager.clearAutoSave()
+  }
+
+  const handleImportProject = (result: ImportResult) => {
+    if (result.success && result.data) {
+      handleLoadProject(result.data)
+      if (result.warnings && result.warnings.length > 0) {
+        alert(`Project imported with warnings:\n${result.warnings.join('\n')}`)
+      } else {
+        alert('Project imported successfully!')
+      }
+    } else {
+      alert(`Import failed: ${result.error}`)
+    }
+  }
 
   // Handle equipment definitions changes
   const handleEquipmentDefinitionsChange = (definitions: EquipmentItem[]) => {
     setEquipmentDefinitions(definitions)
+    // Count custom equipment (those with IDs starting with 'custom_')
+    const customCount = definitions.filter(eq => eq.id.startsWith('custom_')).length
+    setCustomEquipmentCount(customCount)
   }
 
   // Handle adding equipment to canvas
@@ -38,6 +168,7 @@ export default function CanvasPage() {
       y: CANVAS_CENTER_PIXELS,
       rotation: 0,
       dimensions: equipment.dimensions, // Store the actual dimensions used (including custom ones)
+      clearance: equipment.clearance, // Store the clearance data from the equipment definition
       customLabel: undefined
     }
     
@@ -116,6 +247,29 @@ export default function CanvasPage() {
     setSelectedEquipmentIds([])
   }
 
+  // Background image management functions
+  const handleBackgroundImageAdd = (image: Omit<BackgroundImage, 'id'>) => {
+    const imageWithId: BackgroundImage = {
+      ...image,
+      id: `bg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }
+    setBackgroundImages(prev => [...prev, imageWithId])
+  }
+
+  const handleBackgroundImageUpdate = (imageId: string, updates: Partial<BackgroundImage>) => {
+    setBackgroundImages(prev => 
+      prev.map(img => 
+        img.id === imageId 
+          ? { ...img, ...updates }
+          : img
+      )
+    )
+  }
+
+  const handleBackgroundImageDelete = (imageId: string) => {
+    setBackgroundImages(prev => prev.filter(img => img.id !== imageId))
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -124,14 +278,45 @@ export default function CanvasPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Site Planner</h1>
-              <p className="text-sm text-gray-600">Canvas Editor</p>
+              <p className="text-sm text-gray-600">
+                {currentProject ? currentProject.metadata.name : 'Canvas Editor'}
+                {hasUnsavedChanges && <span className="text-orange-500 ml-2">• Unsaved changes</span>}
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Save Project
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setProjectManagerModalOpen(true)}
+                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                📁 Projects
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                Export PDF
+              <button
+                onClick={() => setExportImportModalOpen(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+              >
+                📁 Export/Import
+              </button>
+              <button
+                onClick={() => setPdfExportModalOpen(true)}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                📄 Export PDF
+              </button>
+              <button 
+                onClick={() => {
+                  if (currentProject) {
+                    handleSaveProject(currentProject.metadata.name, currentProject.metadata.description)
+                  } else {
+                    setProjectManagerModalOpen(true)
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  hasUnsavedChanges 
+                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                💾 {currentProject ? 'Save' : 'Save Project'}
               </button>
             </div>
           </div>
@@ -159,6 +344,14 @@ export default function CanvasPage() {
             onEquipmentRotate={handleEquipmentRotate}
             onEquipmentDelete={handleEquipmentDelete}
             selectedEquipmentId={selectedEquipmentIds[0] || undefined}
+            backgroundImages={backgroundImages}
+            onBackgroundImageAdd={handleBackgroundImageAdd}
+            onBackgroundImageUpdate={handleBackgroundImageUpdate}
+            onBackgroundImageDelete={handleBackgroundImageDelete}
+            onCanvasReady={(element) => {
+              console.log('Canvas element received in parent:', element)
+              setCanvasElement(element)
+            }}
           />
           
           {/* Keyboard Handler */}
@@ -204,6 +397,37 @@ export default function CanvasPage() {
           </div>
         </div>
       </div>
+
+      {/* Project Management Modals */}
+      <ProjectManagerModal
+        isOpen={projectManagerModalOpen}
+        onClose={() => setProjectManagerModalOpen(false)}
+        onNewProject={handleNewProject}
+        onLoadProject={handleLoadProject}
+        onSaveProject={handleSaveProject}
+        currentProjectName={currentProject?.metadata.name}
+      />
+
+      <ExportImportModal
+        isOpen={exportImportModalOpen}
+        onClose={() => setExportImportModalOpen(false)}
+        onImport={handleImportProject}
+        placedEquipment={placedEquipment}
+        backgroundImages={backgroundImages}
+        equipmentDefinitions={equipmentDefinitions}
+        customEquipmentCount={customEquipmentCount}
+        projectName={currentProject?.metadata.name || 'lot-planner-project'}
+      />
+
+      <PDFExportModal
+        isOpen={pdfExportModalOpen}
+        onClose={() => setPdfExportModalOpen(false)}
+        canvasElement={canvasElement}
+        placedEquipment={placedEquipment}
+        backgroundImages={backgroundImages}
+        equipmentDefinitions={equipmentDefinitions}
+        projectName={currentProject?.metadata.name || 'lot-planner-layout'}
+      />
     </div>
   )
 }

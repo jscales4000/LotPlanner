@@ -1,9 +1,10 @@
 'use client'
 
 import React from 'react'
-import { Group, Rect, Circle, Text } from 'react-konva'
-import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
+import { Group, Rect, Circle, Text, Line } from 'react-konva'
+import { PlacedEquipment, EquipmentItem, CustomClearance, RectangularClearance } from '@/lib/equipment/types'
 import { equipmentLibrary } from '@/lib/equipment/library'
+import { generateClearancePolygonPoints, createDefaultClearance } from '@/lib/equipment/clearanceUtils'
 
 interface EquipmentLayerProps {
   equipment: PlacedEquipment[]
@@ -82,7 +83,7 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
       {equipment.map(placedEquipment => {
         // Find the equipment definition in combined definitions
         const equipmentDef = allEquipmentDefinitions.find(
-          item => item.id === placedEquipment.equipmentId
+          (item: EquipmentItem) => item.id === placedEquipment.equipmentId
         )
         
         if (!equipmentDef) return null
@@ -104,8 +105,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
             y={placedEquipment.y}
             rotation={placedEquipment.rotation}
             // Set rotation origin to center of the equipment
-            offsetX={isCircular ? 0 : width / 2}
-            offsetY={isCircular ? 0 : height / 2}
+            offsetX={isCircular ? radius : width / 2}
+            offsetY={isCircular ? radius : height / 2}
             draggable
             onClick={(e) => handleEquipmentClick(placedEquipment, e)}
             onDragEnd={(e) => handleDragEnd(placedEquipment.id, e)}
@@ -115,6 +116,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
             {/* Equipment Shape - Rectangle or Circle */}
             {isCircular ? (
               <Circle
+                x={0} // Circle is centered at the Group's origin (which is offset)
+                y={0}
                 radius={radius}
                 fill={equipmentDef.color}
                 stroke={isSelected ? '#2563eb' : '#666666'}
@@ -152,33 +155,103 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
               listening={false}
             />
 
-            {/* Ride Clearance Zone - Always visible if rideClearing is set */}
-            {equipmentDef.rideClearing && equipmentDef.rideClearing > 0 && (
-              isCircular ? (
-                <Circle
-                  radius={radius + (equipmentDef.rideClearing * pixelsPerFoot)}
-                  fill="rgba(255, 165, 0, 0.1)" // Light orange fill for clearance area
-                  stroke="#ff8c00" // Orange stroke
-                  strokeWidth={2}
-                  dash={[8, 4]} // Dashed line to distinguish from main equipment
-                  opacity={0.6}
-                  listening={false}
-                />
-              ) : (
-                <Rect
-                  x={-width / 2 - (equipmentDef.rideClearing * pixelsPerFoot)} // Center around rotation origin
-                  y={-height / 2 - (equipmentDef.rideClearing * pixelsPerFoot)}
-                  width={width + (equipmentDef.rideClearing * 2 * pixelsPerFoot)}
-                  height={height + (equipmentDef.rideClearing * 2 * pixelsPerFoot)}
-                  fill="rgba(255, 165, 0, 0.1)" // Light orange fill for clearance area
-                  stroke="#ff8c00" // Orange stroke
-                  strokeWidth={2}
-                  dash={[8, 4]} // Dashed line to distinguish from main equipment
-                  opacity={0.6}
-                  listening={false}
-                />
-              )
-            )}
+            {/* Custom Clearance Zone */}
+            {(() => {
+              // Get clearance from placed equipment or create default from equipment definition
+              let clearance = placedEquipment.clearance
+              if (!clearance && equipmentDef.rideClearing && equipmentDef.rideClearing > 0) {
+                clearance = createDefaultClearance(dimensions, equipmentDef.rideClearing)
+              }
+              
+              // Debug logging for clearance rendering
+              console.log('EquipmentLayer - clearance rendering:', {
+                equipmentId: placedEquipment.id,
+                equipmentName: equipmentDef.name,
+                placedEquipmentClearance: placedEquipment.clearance,
+                finalClearance: clearance,
+                clearanceType: clearance?.type,
+                hasCustomClearance: clearance?.type === 'custom'
+              })
+              
+              if (!clearance) return null
+              
+              if (clearance.type === 'custom') {
+                // Render custom polygon clearance with curves
+                const polygonPoints = generateClearancePolygonPoints(clearance)
+                
+                // Enhanced debug logging for custom clearance
+                console.log('EquipmentLayer - custom clearance details:', {
+                  clearanceData: clearance,
+                  polygonPointsCount: polygonPoints.length,
+                  polygonPoints: polygonPoints,
+                  pixelsPerFoot,
+                  equipmentPosition: { x: placedEquipment.x, y: placedEquipment.y },
+                  equipmentRotation: placedEquipment.rotation
+                })
+                
+                if (polygonPoints.length < 3) {
+                  console.log('EquipmentLayer - insufficient polygon points:', polygonPoints.length)
+                  return null
+                }
+                
+                // Convert points to pixel coordinates relative to equipment center
+                // The clearance points are in equipment-relative coordinates (feet)
+                // We need to convert them to pixel coordinates and center them around the equipment's origin
+                // This matches how the equipment shape is positioned (centered around rotation origin)
+                const pixelPoints = polygonPoints.flatMap(point => [
+                  (point.x * pixelsPerFoot) - (isCircular ? radius : width / 2),
+                  (point.y * pixelsPerFoot) - (isCircular ? radius : height / 2)
+                ])
+                
+                console.log('EquipmentLayer - rendering custom clearance Line with pixelPoints:', pixelPoints)
+                
+                return (
+                  <Line
+                    points={pixelPoints}
+                    closed={clearance.closed}
+                    fill="rgba(255, 0, 255, 0.3)" // Bright magenta fill for visibility
+                    stroke="#ff00ff" // Bright magenta stroke
+                    strokeWidth={4} // Thicker stroke for visibility
+                    dash={[10, 5]} // More prominent dashes
+                    opacity={1.0} // Full opacity for debugging
+                    listening={false}
+                  />
+                )
+              } else {
+                // Render traditional rectangular clearance
+                const front = clearance.front ?? clearance.all ?? 0
+                const back = clearance.back ?? clearance.all ?? 0
+                const left = clearance.left ?? clearance.all ?? 0
+                const right = clearance.right ?? clearance.all ?? 0
+                
+                if (front === 0 && back === 0 && left === 0 && right === 0) return null
+                
+                return isCircular ? (
+                  <Circle
+                    radius={radius + (Math.max(front, back, left, right) * pixelsPerFoot)}
+                    fill="rgba(255, 165, 0, 0.1)" // Light orange fill
+                    stroke="#ff8c00" // Orange stroke
+                    strokeWidth={2}
+                    dash={[8, 4]} // Dashed line
+                    opacity={0.6}
+                    listening={false}
+                  />
+                ) : (
+                  <Rect
+                    x={-width / 2 - (left * pixelsPerFoot)}
+                    y={-height / 2 - (front * pixelsPerFoot)}
+                    width={width + ((left + right) * pixelsPerFoot)}
+                    height={height + ((front + back) * pixelsPerFoot)}
+                    fill="rgba(255, 165, 0, 0.1)" // Light orange fill
+                    stroke="#ff8c00" // Orange stroke
+                    strokeWidth={2}
+                    dash={[8, 4]} // Dashed line
+                    opacity={0.6}
+                    listening={false}
+                  />
+                )
+              }
+            })()}
 
             {/* Selection Handles (when selected) */}
             {isSelected && (
@@ -197,11 +270,10 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                 
                 {/* Rotation handle */}
                 <Group>
-                  <Rect
-                    x={-4} // Center the rotation handle
-                    y={isCircular ? -radius - 20 : -height / 2 - 20} // Position above the equipment
-                    width={8}
-                    height={8}
+                  <Circle
+                    x={0}
+                    y={isCircular ? -radius - 15 : -height / 2 - 15}
+                    radius={6}
                     fill="#10b981"
                     stroke="#ffffff"
                     strokeWidth={1}
@@ -216,7 +288,7 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                       const group = e.target.getParent()?.getParent()
                       if (!group) return
                       
-                      // With centered rotation origin, the group position IS the center
+                      // Use the group's position as the center for rotation calculation
                       const centerX = group.x()
                       const centerY = group.y()
                       
@@ -224,6 +296,10 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                       const degrees = (angle * 180) / Math.PI + 90
                       
                       handleRotation(placedEquipment.id, degrees)
+                      
+                      // Reset the rotation handle position to prevent it from moving
+                      e.target.x(0)
+                      e.target.y(isCircular ? -radius - 15 : -height / 2 - 15)
                     }}
                   />
                   {/* Rotation line */}
@@ -253,8 +329,8 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
                   }}
                 />
                 <Text
-                  x={width - 9}
-                  y={-9}
+                  x={isCircular ? radius - 3 : width / 2 - 3} // Center the delete button text
+                  y={isCircular ? -radius - 3 : -height / 2 - 3}
                   text="×"
                   fontSize={8}
                   fill="white"
@@ -270,4 +346,25 @@ const EquipmentLayer: React.FC<EquipmentLayerProps> = ({
   )
 }
 
-export default EquipmentLayer
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(EquipmentLayer, (prevProps, nextProps) => {
+  // Custom comparison for performance optimization
+  return (
+    prevProps.equipment.length === nextProps.equipment.length &&
+    prevProps.scale === nextProps.scale &&
+    prevProps.selectedEquipmentId === nextProps.selectedEquipmentId &&
+    prevProps.snapToGrid === nextProps.snapToGrid &&
+    prevProps.gridSize === nextProps.gridSize &&
+    // Deep compare equipment array (only if lengths match)
+    prevProps.equipment.every((prevEq, index) => {
+      const nextEq = nextProps.equipment[index]
+      return (
+        prevEq.id === nextEq.id &&
+        prevEq.x === nextEq.x &&
+        prevEq.y === nextEq.y &&
+        prevEq.rotation === nextEq.rotation &&
+        prevEq.equipmentId === nextEq.equipmentId
+      )
+    })
+  )
+})

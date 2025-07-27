@@ -15,13 +15,33 @@ export interface CircularDimensions {
 
 export type EquipmentDimensions = RectangularDimensions | CircularDimensions
 
-export interface EquipmentClearance {
+// Point in a custom clearance polygon
+export interface ClearancePoint {
+  x: number        // relative to equipment center (feet)
+  y: number        // relative to equipment center (feet)
+  curveType?: 'none' | 'arc'  // type of curve to next point
+  curveAngle?: 45 | 90 | 180  // curve angle in degrees
+  curveDirection?: 'clockwise' | 'counterclockwise'
+}
+
+// Custom polygonal clearance zone
+export interface CustomClearance {
+  type: 'custom'
+  points: ClearancePoint[]     // up to 20 points
+  closed: boolean              // whether polygon is closed
+}
+
+// Traditional rectangular clearance
+export interface RectangularClearance {
+  type: 'rectangular'
   front?: number  // clearance in feet
   back?: number   // clearance in feet
   left?: number   // clearance in feet
   right?: number  // clearance in feet
   all?: number    // uniform clearance in feet
 }
+
+export type EquipmentClearance = RectangularClearance | CustomClearance
 
 export interface EquipmentItem {
   id: string
@@ -66,6 +86,7 @@ export interface PlacedEquipment {
   y: number
   rotation: number
   dimensions: EquipmentDimensions  // Store actual dimensions used
+  clearance?: EquipmentClearance   // Custom or default clearance
   customLabel?: string
   metadata?: Record<string, any>
 }
