@@ -30,7 +30,10 @@ export default function GoogleMapsImport({ onImport, onClose }: GoogleMapsImport
         const satelliteConfig = generateSatelliteImageConfig(
           mapsData.latitude,
           mapsData.longitude,
-          mapsData.zoom
+          mapsData.zoom,
+          'ultra', // Use highest quality available
+          'landscape', // Use landscape orientation for wide lots
+          2.0 // 2x coverage area for larger satellite image
         );
         setPreviewData({
           mapsData,
@@ -64,7 +67,10 @@ export default function GoogleMapsImport({ onImport, onClose }: GoogleMapsImport
       const config = generateSatelliteImageConfig(
         mapsData.latitude,
         mapsData.longitude,
-        mapsData.zoom
+        mapsData.zoom,
+        'ultra', // Use highest quality available
+        'landscape', // Use landscape orientation for wide lots
+        2.0 // 2x coverage area for larger satellite image
       );
       
       // Use the real Google Maps Static API with the configured API key
@@ -113,7 +119,7 @@ export default function GoogleMapsImport({ onImport, onClose }: GoogleMapsImport
               value={url}
               onChange={handleUrlChange}
               placeholder="Paste Google Maps link here..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
             />
             <p className="mt-1 text-xs text-gray-500">
               Paste a link from Google Maps (e.g., from sharing a location)

@@ -140,7 +140,7 @@ export default function ProjectManagerModal({
                       type="text"
                       value={newProjectName}
                       onChange={(e) => setNewProjectName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       placeholder="Enter project name"
                     />
                   </div>
@@ -152,7 +152,7 @@ export default function ProjectManagerModal({
                       value={newProjectDescription}
                       onChange={(e) => setNewProjectDescription(e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       placeholder="Enter project description"
                     />
                   </div>
@@ -264,7 +264,7 @@ export default function ProjectManagerModal({
                       type="text"
                       value={saveProjectName}
                       onChange={(e) => setSaveProjectName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       placeholder="Enter project name"
                     />
                   </div>
@@ -276,7 +276,7 @@ export default function ProjectManagerModal({
                       value={saveProjectDescription}
                       onChange={(e) => setSaveProjectDescription(e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       placeholder="Enter project description"
                     />
                   </div>

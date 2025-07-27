@@ -94,24 +94,100 @@ export function calculateGroundResolution(latitude: number, zoom: number): numbe
 }
 
 /**
- * Generate satellite image configuration
+ * Generate satellite image configuration with quality options
  */
-export function generateSatelliteImageConfig(lat: number, lng: number, zoom: number): SatelliteImageConfig {
-  // Canvas is 500' x 500' at 10 pixels per foot
-  const canvasWidthFeet = 500;
-  const canvasHeightFeet = 500;
+export function generateSatelliteImageConfig(
+  lat: number, 
+  lng: number, 
+  zoom: number, 
+  qualityLevel: 'standard' | 'high' | 'ultra' = 'standard',
+  aspectRatio: 'square' | 'landscape' | 'portrait' | 'wide' = 'square',
+  coverageMultiplier: number = 2.0 // 2x larger coverage area by default
+): SatelliteImageConfig {
+  // Canvas is 1000' x 1000' at 10 pixels per foot (1,000,000 sq ft)
+  const canvasWidthFeet = 1000;
+  const canvasHeightFeet = 1000;
   const canvasPixelsPerFoot = 10;
   
-  // Google Maps Static API is limited to 640x640 pixels
-  const maxApiSize = 640;
+  // Quality-based image size selection
+  const qualitySettings = {
+    standard: { size: 640, scale: 1 },    // Standard quality (free tier)
+    high: { size: 1280, scale: 1 },       // High quality (premium tier)
+    ultra: { size: 2048, scale: 2 }       // Ultra quality (premium tier with scale=2)
+  };
   
-  // Calculate what zoom level we need to cover 500' x 500' within 640x640 pixels
+  const isPremium = process.env.NEXT_PUBLIC_GOOGLE_MAPS_PREMIUM === 'true';
+  const selectedQuality = qualitySettings[qualityLevel];
+  
+  // Enforce API limits based on account type
+  let maxApiSize: number;
+  let scaleValue: number;
+  
+  if (!isPremium && qualityLevel !== 'standard') {
+    console.warn(`Quality level '${qualityLevel}' requires premium API. Falling back to standard.`);
+    maxApiSize = qualitySettings.standard.size;
+    scaleValue = qualitySettings.standard.scale;
+  } else {
+    maxApiSize = Math.min(selectedQuality.size, isPremium ? 2048 : 640);
+    scaleValue = selectedQuality.scale;
+  }
+
+  console.log(`🎯 SATELLITE IMAGE QUALITY DEBUG:`, {
+    requestedQuality: qualityLevel,
+    isPremium,
+    maxApiSize,
+    scaleValue,
+    resultingResolution: `${maxApiSize}x${maxApiSize}`,
+    scaleMultiplier: scaleValue,
+    effectiveResolution: `${maxApiSize * scaleValue}x${maxApiSize * scaleValue}`
+  });
+  
+  // Calculate image dimensions based on aspect ratio FIRST
+  let imageWidthPixels: number;
+  let imageHeightPixels: number;
+  
+  switch (aspectRatio) {
+    case 'landscape':
+      // 2:1 landscape (wider than tall) - perfect for wide lots
+      imageWidthPixels = maxApiSize;
+      imageHeightPixels = Math.floor(maxApiSize / 2);
+      break;
+    case 'wide':
+      // 3:1 wide (much wider than tall) - perfect for strip lots
+      imageWidthPixels = maxApiSize;
+      imageHeightPixels = Math.floor(maxApiSize / 3);
+      break;
+    case 'portrait':
+      // 1:2 portrait (taller than wide)
+      imageWidthPixels = Math.floor(maxApiSize / 2);
+      imageHeightPixels = maxApiSize;
+      break;
+    case 'square':
+    default:
+      // 1:1 square (current behavior)
+      imageWidthPixels = maxApiSize;
+      imageHeightPixels = maxApiSize;
+      break;
+  }
+  
+  console.log(`📐 ASPECT RATIO: ${aspectRatio} → ${imageWidthPixels}×${imageHeightPixels} pixels`);
+  
+  // Ensure dimensions don't exceed API limits
+  imageWidthPixels = Math.min(imageWidthPixels, isPremium ? 2048 : 640);
+  imageHeightPixels = Math.min(imageHeightPixels, isPremium ? 2048 : 640);
+  
+  // Calculate what zoom level we need to cover expanded area within the image size
   const metersPerFoot = 0.3048;
-  const targetWidthMeters = canvasWidthFeet * metersPerFoot; // 152.4 meters
-  const targetHeightMeters = canvasHeightFeet * metersPerFoot; // 152.4 meters
+  // Apply coverage multiplier to get larger area (2x = 2000' x 2000', 3x = 3000' x 3000', etc.)
+  const expandedWidthFeet = canvasWidthFeet * coverageMultiplier;
+  const expandedHeightFeet = canvasHeightFeet * coverageMultiplier;
+  const targetWidthMeters = expandedWidthFeet * metersPerFoot;
+  const targetHeightMeters = expandedHeightFeet * metersPerFoot;
   
-  // Calculate required ground resolution to fit our target area in 640 pixels
-  const requiredGroundResolution = targetWidthMeters / maxApiSize; // meters per pixel needed
+  console.log(`🗺️ COVERAGE EXPANSION: ${coverageMultiplier}x → ${expandedWidthFeet}' × ${expandedHeightFeet}' area`);
+  
+  // Calculate required ground resolution to fit our expanded target area
+  const requiredGroundResolution = targetWidthMeters / Math.max(imageWidthPixels, imageHeightPixels); // meters per pixel needed
   
   // Calculate the optimal zoom level for this ground resolution
   const earthCircumference = 40075017; // meters
@@ -124,9 +200,7 @@ export function generateSatelliteImageConfig(lat: number, lng: number, zoom: num
   const feetPerPixel = actualGroundResolution / metersPerFoot;
   const pixelsPerFoot = 1 / feetPerPixel;
   
-  // Use maximum API size for best quality
-  const imageWidthPixels = maxApiSize;
-  const imageHeightPixels = maxApiSize;
+  // Image dimensions already calculated above
   
   // Calculate actual coverage area
   const actualWidthFeet = imageWidthPixels * feetPerPixel;
@@ -137,7 +211,15 @@ export function generateSatelliteImageConfig(lat: number, lng: number, zoom: num
   
   let imageUrl: string;
   if (apiKey) {
-    imageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${adjustedZoom}&size=${imageWidthPixels}x${imageHeightPixels}&maptype=satellite&key=${apiKey}`;
+    // Add scale parameter for higher resolution (premium accounts only)
+    const scaleParam = isPremium && scaleValue > 1 ? `&scale=${scaleValue}` : '';
+    imageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${adjustedZoom}&size=${imageWidthPixels}x${imageHeightPixels}&maptype=satellite${scaleParam}&key=${apiKey}`;
+    
+    console.log(`🚀 FINAL IMAGE URL:`, {
+      url: imageUrl,
+      hasScaleParam: scaleParam !== '',
+      actualResolution: scaleParam ? `${imageWidthPixels * scaleValue}x${imageHeightPixels * scaleValue}` : `${imageWidthPixels}x${imageHeightPixels}`
+    });
   } else {
     const svgContent = `
       <svg width="${imageWidthPixels}" height="${imageHeightPixels}" xmlns="http://www.w3.org/2000/svg">

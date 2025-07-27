@@ -311,7 +311,7 @@ const BackgroundImageManager: React.FC<BackgroundImageManagerProps> = ({
                       type="text"
                       value={selectedImage.name}
                       onChange={(e) => onImageUpdate(selectedImage.id, { name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
 
@@ -322,7 +322,7 @@ const BackgroundImageManager: React.FC<BackgroundImageManagerProps> = ({
                         type="number"
                         value={Math.round(selectedImage.x || 0)}
                         onChange={(e) => onImageUpdate(selectedImage.id, { x: Number(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       />
                     </div>
                     <div>
@@ -331,7 +331,7 @@ const BackgroundImageManager: React.FC<BackgroundImageManagerProps> = ({
                         type="number"
                         value={Math.round(selectedImage.y || 0)}
                         onChange={(e) => onImageUpdate(selectedImage.id, { y: Number(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       />
                     </div>
                   </div>
@@ -343,7 +343,7 @@ const BackgroundImageManager: React.FC<BackgroundImageManagerProps> = ({
                         type="number"
                         value={Math.round(selectedImage.width || 0)}
                         onChange={(e) => onImageUpdate(selectedImage.id, { width: Number(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       />
                     </div>
                     <div>
@@ -352,7 +352,7 @@ const BackgroundImageManager: React.FC<BackgroundImageManagerProps> = ({
                         type="number"
                         value={Math.round(selectedImage.height || 0)}
                         onChange={(e) => onImageUpdate(selectedImage.id, { height: Number(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       />
                     </div>
                   </div>
@@ -363,7 +363,7 @@ const BackgroundImageManager: React.FC<BackgroundImageManagerProps> = ({
                       type="number"
                       value={Math.round(selectedImage.rotation || 0)}
                       onChange={(e) => onImageUpdate(selectedImage.id, { rotation: Number(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
 

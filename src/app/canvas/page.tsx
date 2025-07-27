@@ -159,13 +159,46 @@ export default function CanvasPage() {
 
   // Handle adding equipment to canvas
   const handleEquipmentSelect = (equipment: EquipmentItem) => {
-    // Add equipment to center of 250,000 sq ft canvas (500ft x 500ft = 2500 x 2500 pixels at 10px/ft)
-    const CANVAS_CENTER_PIXELS = 2500 // Center of 5000x5000 pixel canvas
+    // Calculate placement position - prefer satellite image center, fallback to canvas center
+    let placementX = 5000 // Default canvas center for 1000' x 1000' canvas (10000px / 2 = 5000px)
+    let placementY = 5000
+    
+    // If there are background images (satellite images), place at the center of the largest one
+    if (backgroundImages && backgroundImages.length > 0) {
+      // Find the largest background image (by area)
+      let largestImage = backgroundImages[0]
+      let largestArea = 0
+      
+      backgroundImages.forEach(img => {
+        const imgWidth = (img.width || 0) * (img.scaleX || 1)
+        const imgHeight = (img.height || 0) * (img.scaleY || 1)
+        const area = imgWidth * imgHeight
+        
+        if (area > largestArea) {
+          largestArea = area
+          largestImage = img
+        }
+      })
+      
+      // Calculate center of the largest satellite image
+      const imgWidth = (largestImage.width || 0) * (largestImage.scaleX || 1)
+      const imgHeight = (largestImage.height || 0) * (largestImage.scaleY || 1)
+      placementX = (largestImage.x || 0) + imgWidth / 2
+      placementY = (largestImage.y || 0) + imgHeight / 2
+      
+      console.log(`Placing equipment at satellite image center: (${Math.round(placementX)}, ${Math.round(placementY)})`, {
+        imageSize: `${Math.round(imgWidth)}x${Math.round(imgHeight)}`,
+        imagePosition: `(${largestImage.x}, ${largestImage.y})`
+      })
+    } else {
+      console.log(`No satellite images found, placing equipment at canvas center: (${placementX}, ${placementY})`)
+    }
+    
     const newEquipment: PlacedEquipment = {
       id: `equipment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       equipmentId: equipment.id,
-      x: CANVAS_CENTER_PIXELS, // Center of 250k sq ft canvas
-      y: CANVAS_CENTER_PIXELS,
+      x: placementX, // Center of satellite image or canvas center as fallback
+      y: placementY,
       rotation: 0,
       dimensions: equipment.dimensions, // Store the actual dimensions used (including custom ones)
       clearance: equipment.clearance, // Store the clearance data from the equipment definition
@@ -334,9 +367,9 @@ export default function CanvasPage() {
         />
 
         {/* Canvas Area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative flex flex-col">
           <CanvasEditor 
-            className="w-full h-full"
+            className="w-full h-full flex-1"
             placedEquipment={placedEquipment}
             equipmentDefinitions={equipmentDefinitions}
             onEquipmentSelect={handleCanvasEquipmentSelect}
@@ -365,15 +398,25 @@ export default function CanvasPage() {
           />
         </div>
 
-        {/* Right Sidebar - Properties (placeholder) */}
+        {/* Right Sidebar - Properties */}
         <div className="w-64 bg-white border-l border-gray-200 p-4">
           <h3 className="font-semibold text-gray-900 mb-4">Properties</h3>
           <div className="space-y-4">
+            {/* Canvas Information */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Canvas Info</h4>
+              <div className="space-y-1 text-sm text-gray-600">
+                <div><span className="font-medium">Size:</span> 1,000,000 sq ft</div>
+                <div><span className="font-medium">Dimensions:</span> 1000&apos; × 1000&apos;</div>
+                <div><span className="font-medium">Scale:</span> 10 px/ft</div>
+              </div>
+            </div>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Canvas Scale
               </label>
-              <div className="text-sm text-gray-600">1 pixel = 1 foot</div>
+              <div className="text-sm text-gray-600">10 pixels = 1 foot</div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -382,7 +425,7 @@ export default function CanvasPage() {
               <input 
                 type="number" 
                 defaultValue={50}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-500"
                 placeholder="Grid size in pixels"
               />
             </div>

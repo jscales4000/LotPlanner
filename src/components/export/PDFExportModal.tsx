@@ -140,7 +140,7 @@ export default function PDFExportModal({
                         ...prev, 
                         paperSize: e.target.value as PDFExportOptions['paperSize']
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       aria-label="Paper size selection"
                     >
                       <option value="letter">Letter (8.5&quot; × 11&quot;)</option>
@@ -160,7 +160,7 @@ export default function PDFExportModal({
                         ...prev, 
                         orientation: e.target.value as PDFExportOptions['orientation']
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       aria-label="Page orientation selection"
                     >
                       <option value="landscape">Landscape (Recommended)</option>
@@ -178,7 +178,7 @@ export default function PDFExportModal({
                         ...prev, 
                         quality: e.target.value as PDFExportOptions['quality']
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     >
                       <option value="low">Low (Faster, Smaller File)</option>
                       <option value="medium">Medium (Balanced)</option>
@@ -301,7 +301,7 @@ export default function PDFExportModal({
                         ...prev, 
                         title: e.target.value 
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       aria-label="Document title"
                       placeholder="Enter document title"
                     />
@@ -318,7 +318,7 @@ export default function PDFExportModal({
                         ...prev, 
                         subtitle: e.target.value || undefined 
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       placeholder="e.g., Carnival/Fair Site Plan"
                       aria-label="Document subtitle"
                     />
@@ -335,7 +335,7 @@ export default function PDFExportModal({
                         ...prev, 
                         createdBy: e.target.value 
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                       aria-label="Author name"
                     />
                   </div>
@@ -351,7 +351,7 @@ export default function PDFExportModal({
                         ...prev, 
                         scale: e.target.value 
                       }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                 </div>

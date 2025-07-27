@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { EquipmentItem, EquipmentCategory, EquipmentDimensions, EquipmentShape, RectangularDimensions, CircularDimensions, EquipmentClearance } from '@/lib/equipment/types'
 import { organizedLibrary, searchEquipment } from '@/lib/equipment/library'
 import ClearanceEditor from '@/components/canvas/ClearanceEditor'
+import EquipmentLibraryManager from './EquipmentLibraryManager'
 
 interface EquipmentLibraryProps {
   onEquipmentSelect: (equipment: EquipmentItem) => void
@@ -57,6 +58,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   const [clearanceEditorOpen, setClearanceEditorOpen] = useState<string | null>(null)
   const [newEquipmentItems, setNewEquipmentItems] = useState<EquipmentItem[]>([])
   const [newEquipmentCounter, setNewEquipmentCounter] = useState(0)
+  const [libraryManagerOpen, setLibraryManagerOpen] = useState(false)
 
   // Memoize all equipment definitions to prevent unnecessary updates
   const allEquipmentDefinitions = useMemo(() => {
@@ -233,6 +235,66 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
     // Don't automatically select the equipment - let user click to place it
   }
 
+  // Handle equipment library updates from import/export
+  const handleEquipmentLibraryUpdate = (newDefinitions: EquipmentItem[], importedCustomSettings?: any) => {
+    // Clear existing custom state
+    setNewEquipmentItems([])
+    setCustomDimensions({})
+    setCustomCategories({})
+    setCustomNames({})
+    setCustomWeight({})
+    setCustomCapacity({})
+    setCustomTurnAroundTime({})
+    setCustomVerticalHeight({})
+    setCustomRideClearing({})
+    setCustomClearances({})
+    
+    // Set new equipment items (filter out base library items)
+    const baseLibraryIds = new Set(Object.values(organizedLibrary).flat().map(eq => eq.id))
+    const customEquipment = newDefinitions.filter(eq => !baseLibraryIds.has(eq.id))
+    setNewEquipmentItems(customEquipment)
+    
+    // Restore custom settings if they were imported
+    if (importedCustomSettings) {
+      if (importedCustomSettings.customDimensions) {
+        setCustomDimensions(importedCustomSettings.customDimensions)
+      }
+      if (importedCustomSettings.customCategories) {
+        setCustomCategories(importedCustomSettings.customCategories)
+      }
+      if (importedCustomSettings.customNames) {
+        setCustomNames(importedCustomSettings.customNames)
+      }
+      if (importedCustomSettings.customWeight) {
+        setCustomWeight(importedCustomSettings.customWeight)
+      }
+      if (importedCustomSettings.customCapacity) {
+        setCustomCapacity(importedCustomSettings.customCapacity)
+      }
+      if (importedCustomSettings.customTurnAroundTime) {
+        setCustomTurnAroundTime(importedCustomSettings.customTurnAroundTime)
+      }
+      if (importedCustomSettings.customVerticalHeight) {
+        setCustomVerticalHeight(importedCustomSettings.customVerticalHeight)
+      }
+      if (importedCustomSettings.customRideClearing) {
+        setCustomRideClearing(importedCustomSettings.customRideClearing)
+      }
+      if (importedCustomSettings.customClearances) {
+        setCustomClearances(importedCustomSettings.customClearances)
+      }
+      
+      console.log('Custom settings restored:', importedCustomSettings)
+    }
+    
+    console.log('Equipment library updated:', {
+      total: newDefinitions.length,
+      custom: customEquipment.length,
+      base: newDefinitions.length - customEquipment.length,
+      customSettingsRestored: !!importedCustomSettings
+    })
+  }
+
   const handleEquipmentClick = (equipment: EquipmentItem) => {
     // Create equipment with custom dimensions, category, name, operational specs, and clearance if they exist
     const customDims = customDimensions[equipment.id]
@@ -283,13 +345,19 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
       <div className="p-4 border-b border-gray-200">
         <h3 className="font-semibold text-gray-900 mb-3">Equipment Library</h3>
         
-        {/* Add Equipment Button */}
-        <div className="mb-3">
+        {/* Equipment Management Buttons */}
+        <div className="mb-3 space-y-2">
           <button
             onClick={addNewEquipment}
             className="w-full px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           >
             ➕ Add New Equipment
+          </button>
+          <button
+            onClick={() => setLibraryManagerOpen(true)}
+            className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          >
+            📚 Manage Library
           </button>
         </div>
         
@@ -300,7 +368,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
             placeholder="Search equipment..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500"
           />
         </div>
 
@@ -462,7 +530,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                 type="text"
                                 value={customNames[equipment.id] || equipment.name}
                                 onChange={(e) => updateCustomName(equipment.id, e.target.value)}
-                                className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500"
                                 placeholder="Equipment name"
                               />
                             </div>
@@ -510,7 +578,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                               <select
                                 value={customCategories[equipment.id] || equipment.category}
                                 onChange={(e) => updateCustomCategory(equipment.id, e.target.value as EquipmentCategory)}
-                                className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                               >
                                 <option value="mega-rides">🎢 Mega Rides</option>
                                 <option value="rides">🎠 Rides</option>
@@ -537,7 +605,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                     step="0.1"
                                     value={(currentDims as any).width || 0}
                                     onChange={(e) => updateCustomDimension(equipment.id, 'width', parseFloat(e.target.value) || 0)}
-                                    className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </div>
@@ -551,7 +619,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                     step="0.1"
                                     value={(currentDims as any).height || 0}
                                     onChange={(e) => updateCustomDimension(equipment.id, 'height', parseFloat(e.target.value) || 0)}
-                                    className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </div>
@@ -566,7 +634,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                       step="0.1"
                                       value={currentDims.depth || 0}
                                       onChange={(e) => updateCustomDimension(equipment.id, 'depth', parseFloat(e.target.value) || 0)}
-                                      className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                                       onClick={(e) => e.stopPropagation()}
                                     />
                                   </div>
@@ -584,7 +652,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                     step="0.1"
                                     value={(currentDims as any).radius || 0}
                                     onChange={(e) => updateCustomDimension(equipment.id, 'radius', parseFloat(e.target.value) || 0)}
-                                    className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 </div>
@@ -599,7 +667,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                                       step="0.1"
                                       value={currentDims.depth || 0}
                                       onChange={(e) => updateCustomDimension(equipment.id, 'depth', parseFloat(e.target.value) || 0)}
-                                      className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      className="w-full px-2 py-1 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white"
                                       onClick={(e) => e.stopPropagation()}
                                     />
                                   </div>
@@ -868,6 +936,25 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
           />
         )
       })()}
+      
+      {/* Equipment Library Manager Modal */}
+      <EquipmentLibraryManager
+        equipmentDefinitions={allEquipmentDefinitions}
+        onEquipmentDefinitionsUpdate={handleEquipmentLibraryUpdate}
+        customSettings={{
+          customDimensions,
+          customCategories,
+          customNames,
+          customWeight,
+          customCapacity,
+          customTurnAroundTime,
+          customVerticalHeight,
+          customRideClearing,
+          customClearances
+        }}
+        isOpen={libraryManagerOpen}
+        onClose={() => setLibraryManagerOpen(false)}
+      />
     </div>
   )
 }

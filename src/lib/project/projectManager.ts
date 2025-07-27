@@ -34,8 +34,8 @@ export class ProjectManager {
         author: 'Lot Planner User'
       },
       canvasSettings: {
-        width: 5000, // 500ft at 10px/ft
-        height: 5000,
+        width: 10000, // 1000ft at 10px/ft
+        height: 10000,
         pixelsPerFoot: 10,
         gridSize: 50,
         gridVisible: true,
@@ -80,8 +80,8 @@ export class ProjectManager {
         version: PROJECT_FILE_VERSION
       },
       canvasSettings: {
-        width: 5000,
-        height: 5000,
+        width: 10000,
+        height: 10000,
         pixelsPerFoot: 10,
         gridSize: 50,
         gridVisible: true,
@@ -120,8 +120,8 @@ export class ProjectManager {
 
       // Ensure all required fields have defaults
       const defaultCanvasSettings = {
-        width: 5000,
-        height: 5000,
+        width: 10000,
+        height: 10000,
         pixelsPerFoot: 10,
         gridSize: 50,
         gridVisible: true,

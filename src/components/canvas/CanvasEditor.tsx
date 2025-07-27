@@ -11,6 +11,8 @@ import ScaleBar from './ScaleBar'
 import MeasurementTool, { type Measurement } from './MeasurementTool'
 import DistanceInputModal from './DistanceInputModal'
 import SimpleMeasurementTool, { SimpleMeasurement } from './SimpleMeasurementTool'
+import EnhancedMeasurementTool from './EnhancedMeasurementTool'
+import EnhancedCalibrateDialog from './EnhancedCalibrateDialog'
 import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
 
 interface CanvasEditorProps {
@@ -59,11 +61,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
   const stageRef = useRef<Konva.Stage>(null)
   const [isClient, setIsClient] = useState(false)
   
-  // Canvas configuration for 250,000 sq ft (500ft x 500ft)
-  const CANVAS_AREA_SQ_FT = 250000
-  const CANVAS_SIDE_FT = Math.sqrt(CANVAS_AREA_SQ_FT) // 500 feet
-  const PIXELS_PER_FOOT = 10 // Reduced from 50 to 10 for better performance with large areas
-  const CANVAS_SIZE_PIXELS = CANVAS_SIDE_FT * PIXELS_PER_FOOT // 5000 pixels
+  // Canvas configuration for 1,000,000 sq ft (1000ft x 1000ft)
+  const CANVAS_AREA_SQ_FT = 1000000
+  const CANVAS_SIDE_FT = Math.sqrt(CANVAS_AREA_SQ_FT) // 1000 feet
+  const PIXELS_PER_FOOT = 10 // Optimized for performance with ultra-large areas
+  const CANVAS_SIZE_PIXELS = CANVAS_SIDE_FT * PIXELS_PER_FOOT // 10000 pixels
   
   const [canvasState, setCanvasState] = useState<CanvasState>({
     scale: 0.2, // Start zoomed out to see more of the large area
@@ -85,6 +87,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     onSubmit: (actualDistance: number) => void;
     onCancel: () => void;
   } | null>(null)
+  
+  // Enhanced measurement workflow states
+  const [measurementEditMode, setMeasurementEditMode] = useState(false)
+  const [currentMeasurement, setCurrentMeasurement] = useState<{
+    id: string;
+    firstPoint: { x: number; y: number } | null;
+    secondPoint: { x: number; y: number } | null;
+    isComplete: boolean;
+    realWorldDistance?: number;
+  } | null>(null)
+  const [showCalibrateDialog, setShowCalibrateDialog] = useState(false)
 
   // Handle canvas ready callback
   useEffect(() => {
@@ -109,8 +122,13 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     const handleResize = () => {
       if (stageRef.current) {
         const container = stageRef.current.container()
-        const containerWidth = container.offsetWidth
-        const containerHeight = container.offsetHeight
+        const parent = container.parentElement
+        
+        // Use parent container dimensions to ensure full height usage
+        const containerWidth = parent ? parent.clientWidth : container.offsetWidth
+        const containerHeight = parent ? parent.clientHeight : container.offsetHeight
+        
+        console.log('Canvas resize:', { containerWidth, containerHeight, parent: !!parent })
         
         setStageSize({
           width: containerWidth,
@@ -120,10 +138,15 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     }
 
     window.addEventListener('resize', handleResize)
-    handleResize() // Initial call
+    
+    // Use a timeout to ensure the DOM is fully rendered
+    const timeout = setTimeout(handleResize, 100)
 
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      clearTimeout(timeout)
+    }
+  }, [isClient])
 
   // Handle zoom with mouse wheel
   const handleWheel = useCallback((e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -140,8 +163,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     const scaleBy = 1.1
     const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy
 
-    // Limit zoom range
-    const minScale = 0.1
+    // Limit zoom range - allow zooming out to 4% to match Max Out button
+    const minScale = 0.04 // 4% minimum zoom
     const maxScale = 5
     const clampedScale = Math.max(minScale, Math.min(maxScale, newScale))
 
@@ -289,6 +312,78 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     })
   }, [placedEquipment, equipmentDefinitions, stageSize, resetCanvas])
 
+  // Zoom in function
+  const zoomIn = useCallback(() => {
+    if (!stageRef.current) return
+    
+    const stage = stageRef.current
+    const oldScale = stage.scaleX()
+    const scaleBy = 1.1
+    const newScale = Math.min(5, oldScale * scaleBy) // Max zoom 5x
+    
+    // Zoom towards center of visible area
+    const center = {
+      x: stageSize.width / 2,
+      y: stageSize.height / 2
+    }
+    
+    const mousePointTo = {
+      x: (center.x - stage.x()) / oldScale,
+      y: (center.y - stage.y()) / oldScale,
+    }
+    
+    const newPos = {
+      x: center.x - mousePointTo.x * newScale,
+      y: center.y - mousePointTo.y * newScale,
+    }
+    
+    stage.scale({ x: newScale, y: newScale })
+    stage.position(newPos)
+    stage.batchDraw()
+    
+    setCanvasState({
+      scale: newScale,
+      x: newPos.x,
+      y: newPos.y
+    })
+  }, [stageSize])
+
+  // Zoom out function
+  const zoomOut = useCallback(() => {
+    if (!stageRef.current) return
+    
+    const stage = stageRef.current
+    const oldScale = stage.scaleX()
+    const scaleBy = 1.1
+    const newScale = Math.max(0.04, oldScale / scaleBy) // Min zoom 0.04x (4%)
+    
+    // Zoom towards center of visible area
+    const center = {
+      x: stageSize.width / 2,
+      y: stageSize.height / 2
+    }
+    
+    const mousePointTo = {
+      x: (center.x - stage.x()) / oldScale,
+      y: (center.y - stage.y()) / oldScale,
+    }
+    
+    const newPos = {
+      x: center.x - mousePointTo.x * newScale,
+      y: center.y - mousePointTo.y * newScale,
+    }
+    
+    stage.scale({ x: newScale, y: newScale })
+    stage.position(newPos)
+    stage.batchDraw()
+    
+    setCanvasState({
+      scale: newScale,
+      x: newPos.x,
+      y: newPos.y
+    })
+  }, [stageSize])
+
   // Calculate visible bounds for performance optimization
   const getVisibleBounds = useCallback(() => {
     const buffer = 1000 // pixels buffer for smooth scrolling
@@ -384,6 +479,89 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     console.log('Measurement completed:', completedMeasurement)
   }, [activeMeasurementTool, simpleMeasurements, PIXELS_PER_FOOT])
 
+  // Enhanced measurement handlers
+  const handleEnhancedMeasurementPointSet = useCallback((point: { x: number; y: number }) => {
+    if (!currentMeasurement) return
+
+    if (!currentMeasurement.firstPoint) {
+      // Set first point
+      setCurrentMeasurement(prev => prev ? {
+        ...prev,
+        firstPoint: point
+      } : null)
+    } else if (!currentMeasurement.secondPoint) {
+      // Set second point and complete measurement
+      const updatedMeasurement = {
+        ...currentMeasurement,
+        secondPoint: point,
+        isComplete: true
+      }
+      setCurrentMeasurement(updatedMeasurement)
+      
+      // Calculate distance and show calibration dialog
+      const dx = point.x - currentMeasurement.firstPoint.x
+      const dy = point.y - currentMeasurement.firstPoint.y
+      const pixelDistance = Math.sqrt(dx * dx + dy * dy)
+      const calculatedDistance = pixelDistance / PIXELS_PER_FOOT
+      
+      // Show calibration dialog after a short delay
+      setTimeout(() => {
+        setShowCalibrateDialog(true)
+      }, 500)
+    }
+  }, [currentMeasurement, PIXELS_PER_FOOT])
+
+  const handleEnhancedMeasurementEdit = useCallback((firstPoint: { x: number; y: number }, secondPoint: { x: number; y: number }) => {
+    if (!currentMeasurement) return
+
+    setCurrentMeasurement(prev => prev ? {
+      ...prev,
+      firstPoint,
+      secondPoint
+    } : null)
+  }, [currentMeasurement])
+
+  const handleCalibrateSubmit = useCallback((actualDistance: number) => {
+    if (!currentMeasurement || !currentMeasurement.firstPoint || !currentMeasurement.secondPoint) return
+
+    // Calculate the scale factor
+    const dx = currentMeasurement.secondPoint.x - currentMeasurement.firstPoint.x
+    const dy = currentMeasurement.secondPoint.y - currentMeasurement.firstPoint.y
+    const pixelDistance = Math.sqrt(dx * dx + dy * dy)
+    const scaleFactor = actualDistance / (pixelDistance / PIXELS_PER_FOOT)
+
+    // Update the measurement with real-world distance
+    setCurrentMeasurement(prev => prev ? {
+      ...prev,
+      realWorldDistance: actualDistance
+    } : null)
+
+    // Apply scale calibration to background images if any
+    if (backgroundImages && backgroundImages.length > 0 && onBackgroundImageUpdate) {
+      backgroundImages.forEach(image => {
+        onBackgroundImageUpdate(image.id, {
+          scaleX: (image.scaleX || 1) * scaleFactor,
+          scaleY: (image.scaleY || 1) * scaleFactor
+        })
+      })
+    }
+
+    setShowCalibrateDialog(false)
+    console.log('Scale calibrated with factor:', scaleFactor)
+  }, [currentMeasurement, PIXELS_PER_FOOT, backgroundImages, onBackgroundImageUpdate])
+
+  const handleCalibrateEdit = useCallback(() => {
+    setShowCalibrateDialog(false)
+    setMeasurementEditMode(true)
+  }, [])
+
+  const handleCalibrateCancel = useCallback(() => {
+    setShowCalibrateDialog(false)
+    // Optionally reset the measurement
+    setCurrentMeasurement(null)
+    setMeasurementToolActive(false)
+  }, [])
+
   // Handle canvas clicks for measurement tools
   const handleCanvasClick = useCallback((x: number, y: number) => {
     if (!activeMeasurementTool) return
@@ -454,7 +632,20 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
       const stage = e.target.getStage()
       const pos = stage.getPointerPosition()
       
-      // If a measurement tool is active, handle the click for measurement
+      // If enhanced measurement tool is active, handle the click
+      if (measurementToolActive && !activeMeasurementTool && pos) {
+        const canvasX = (pos.x - canvasState.x) / canvasState.scale
+        const canvasY = (pos.y - canvasState.y) / canvasState.scale
+        
+        // Forward to enhanced measurement handlers
+        const handlers = (window as any).enhancedMeasurementHandlers
+        if (handlers && handlers.handleClick) {
+          handlers.handleClick({ target: { getStage: () => stage } })
+        }
+        return
+      }
+      
+      // If a simple measurement tool is active, handle the click for measurement
       if (activeMeasurementTool && pos) {
         handleCanvasClick(pos.x, pos.y)
         return
@@ -464,7 +655,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
       onEquipmentSelect?.(null)
       setSelectedBackgroundImageId(null)
     }
-  }, [onEquipmentSelect, activeMeasurementTool, handleCanvasClick])
+  }, [onEquipmentSelect, activeMeasurementTool, measurementToolActive, handleCanvasClick, canvasState])
   
   // Handle stage double click for measurement tools
   const handleStageDoubleClick = useCallback((e: any) => {
@@ -612,23 +803,131 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
   }
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div className={`relative w-full h-full ${className} flex flex-col`}>
       {/* Canvas Controls */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
         <button
           onClick={resetCanvas}
-          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
+          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm text-gray-900"
           title="Reset View"
         >
           Reset
         </button>
         <button
           onClick={fitToContent}
-          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
+          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm text-gray-900"
           title="Fit to Content"
         >
           Fit
         </button>
+        
+        {/* Zoom Controls */}
+        <div className="flex items-center space-x-2">
+          <div className="flex space-x-1">
+            <button
+              onClick={zoomIn}
+              className="flex-1 px-6 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm text-gray-900 text-center"
+              title="Zoom In"
+            >
+              +
+            </button>
+            <button
+              onClick={zoomOut}
+              className="flex-1 px-6 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm text-gray-900 text-center"
+              title="Zoom Out"
+            >
+              −
+            </button>
+          </div>
+          
+          {/* Zoom Percentage Display */}
+          <div className="text-sm text-gray-900 font-medium bg-white px-3 py-1 rounded border border-gray-300 shadow text-center flex items-center justify-center">
+            Zoom ({Math.round(canvasState.scale * 100)}%)
+          </div>
+          
+          {/* Max Out Button */}
+          <button
+            onClick={() => {
+              if (!stageRef.current) return
+              
+              const stage = stageRef.current
+              
+              // If there are background images, fit the largest one; otherwise fit canvas
+              if (backgroundImages && backgroundImages.length > 0) {
+                // Find the largest background image dimensions
+                let maxWidth = 0
+                let maxHeight = 0
+                let targetImage = null
+                
+                backgroundImages.forEach(img => {
+                  const imgWidth = (img.width || 0) * (img.scaleX || 1)
+                  const imgHeight = (img.height || 0) * (img.scaleY || 1)
+                  const imgArea = imgWidth * imgHeight
+                  const currentMaxArea = maxWidth * maxHeight
+                  
+                  if (imgArea > currentMaxArea) {
+                    maxWidth = imgWidth
+                    maxHeight = imgHeight
+                    targetImage = img
+                  }
+                })
+                
+                if (maxWidth > 0 && maxHeight > 0) {
+                  // Calculate scale to fit the largest background image
+                  const scaleX = stageSize.width / maxWidth
+                  const scaleY = stageSize.height / maxHeight
+                  const fitScale = Math.min(scaleX, scaleY) * 0.9 // 90% padding
+                  
+                  // Center the image in the viewport
+                  const centerX = (stageSize.width - maxWidth * fitScale) / 2
+                  const centerY = (stageSize.height - maxHeight * fitScale) / 2
+                  
+                  // If image has position, account for it
+                  const adjustedX = centerX - (targetImage?.x || 0) * fitScale
+                  const adjustedY = centerY - (targetImage?.y || 0) * fitScale
+                  
+                  stage.scale({ x: fitScale, y: fitScale })
+                  stage.position({ x: adjustedX, y: adjustedY })
+                  stage.batchDraw()
+                  
+                  setCanvasState({
+                    scale: fitScale,
+                    x: adjustedX,
+                    y: adjustedY
+                  })
+                  
+                  console.log(`Max Out: Fit satellite image (${Math.round(maxWidth)}x${Math.round(maxHeight)}px) in viewport (${stageSize.width}x${stageSize.height}px) at ${Math.round(fitScale * 100)}% zoom`)
+                  return
+                }
+              }
+              
+              // Fallback: fit entire canvas if no background images
+              const scaleX = stageSize.width / CANVAS_SIZE_PIXELS
+              const scaleY = stageSize.height / CANVAS_SIZE_PIXELS
+              const fitScale = Math.min(scaleX, scaleY) * 0.9 // 90% to add some padding
+              
+              // Center the canvas in the viewport
+              const centerX = (stageSize.width - CANVAS_SIZE_PIXELS * fitScale) / 2
+              const centerY = (stageSize.height - CANVAS_SIZE_PIXELS * fitScale) / 2
+              
+              stage.scale({ x: fitScale, y: fitScale })
+              stage.position({ x: centerX, y: centerY })
+              stage.batchDraw()
+              
+              setCanvasState({
+                scale: fitScale,
+                x: centerX,
+                y: centerY
+              })
+              
+              console.log(`Max Out: Fit entire canvas (${CANVAS_SIZE_PIXELS}px) in viewport (${stageSize.width}x${stageSize.height}px) at ${Math.round(fitScale * 100)}% zoom`)
+            }}
+            className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm text-gray-900 text-center"
+            title="Fit Entire Satellite Image in View"
+          >
+            Max Out
+          </button>
+        </div>
         <button
           onClick={() => setGridVisible(!gridVisible)}
           className={`px-3 py-1 border rounded shadow text-sm ${
@@ -642,7 +941,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         </button>
         <button
           onClick={() => setBackgroundManagerOpen(true)}
-          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm"
+          className="px-3 py-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50 text-sm text-gray-900"
           title="Manage Background Images"
         >
           Images
@@ -658,17 +957,73 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         >
           Scale
         </button>
-        <button
-          onClick={() => setMeasurementToolActive(!measurementToolActive)}
-          className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-            measurementToolActive
-              ? 'bg-orange-500 text-white'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-          }`}
-          title="Toggle Measurement Tool"
-        >
-          📏 Measure
-        </button>
+        {/* Enhanced Measurement Controls */}
+        <div className="flex space-x-1">
+          <button
+            onClick={() => {
+              if (measurementToolActive) {
+                // Reset measurement if already active
+                setCurrentMeasurement(null)
+                setMeasurementToolActive(false)
+                setMeasurementEditMode(false)
+              } else {
+                // Start new measurement
+                setCurrentMeasurement({
+                  id: Date.now().toString(),
+                  firstPoint: null,
+                  secondPoint: null,
+                  isComplete: false
+                })
+                setMeasurementToolActive(true)
+                setMeasurementEditMode(false)
+              }
+            }}
+            className={`px-3 py-1 border rounded shadow text-sm transition-colors ${
+              measurementToolActive && !measurementEditMode
+                ? 'bg-orange-500 text-white border-orange-500'
+                : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
+            }`}
+            title="Start New Measurement"
+          >
+            📏 Measure
+          </button>
+          
+          <button
+            onClick={() => {
+              if (currentMeasurement?.isComplete) {
+                setMeasurementEditMode(!measurementEditMode)
+              }
+            }}
+            disabled={!currentMeasurement?.isComplete}
+            className={`px-3 py-1 border rounded shadow text-sm transition-colors ${
+              measurementEditMode
+                ? 'bg-blue-500 text-white border-blue-500'
+                : currentMeasurement?.isComplete
+                ? 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
+                : 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed'
+            }`}
+            title="Edit Measurement Line"
+          >
+            ✏️ Edit
+          </button>
+          
+          <button
+            onClick={() => {
+              if (currentMeasurement?.isComplete) {
+                setShowCalibrateDialog(true)
+              }
+            }}
+            disabled={!currentMeasurement?.isComplete}
+            className={`px-3 py-1 border rounded shadow text-sm transition-colors ${
+              currentMeasurement?.isComplete
+                ? 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
+                : 'bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed'
+            }`}
+            title="Calibrate Scale"
+          >
+            🎯 Calibrate
+          </button>
+        </div>
         
         {/* Advanced Measurement Tools */}
         <div className="flex space-x-1">
@@ -712,13 +1067,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         </div>
       </div>
 
-      {/* Canvas Info */}
-      <div className="absolute bottom-4 left-4 z-10 bg-white bg-opacity-90 px-3 py-2 rounded shadow text-sm">
-        <div className="font-medium text-gray-800 mb-1">Canvas: 250,000 sq ft (500&apos; × 500&apos;)</div>
-        <div>Zoom: {Math.round(canvasState.scale * 100)}%</div>
-        <div>Position: ({Math.round(canvasState.x / PIXELS_PER_FOOT)}&apos;&apos;, {Math.round(canvasState.y / PIXELS_PER_FOOT)}&apos;&apos;)</div>
-        <div className="text-xs text-gray-600 mt-1">Scale: {PIXELS_PER_FOOT} px/ft</div>
-      </div>
+      {/* Canvas Info removed - moved to Properties panel */}
 
       {/* Konva Stage */}
       <Stage
@@ -730,7 +1079,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         onDragEnd={handleDragEnd}
         onClick={handleStageClick}
         onDblClick={handleStageDoubleClick}
-        className="border border-gray-300 bg-gray-50"
+        className="border border-gray-300 bg-gray-50 flex-1"
         onContentMouseDown={() => {
           // Ensure canvas element is captured after stage is fully mounted
           if (stageRef.current && onCanvasReady) {
@@ -779,9 +1128,23 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
             gridSize={PIXELS_PER_FOOT}
           />
           
-          {/* Measurement Tool */}
+          {/* Enhanced Measurement Tool */}
+          <EnhancedMeasurementTool
+            isActive={measurementToolActive && !activeMeasurementTool}
+            editMode={measurementEditMode}
+            scale={canvasState.scale}
+            pixelsPerFoot={PIXELS_PER_FOOT}
+            currentMeasurement={currentMeasurement}
+            onPointSet={handleEnhancedMeasurementPointSet}
+            onMeasurementComplete={(distance) => {
+              console.log('Enhanced measurement completed:', distance);
+            }}
+            onMeasurementEdit={handleEnhancedMeasurementEdit}
+          />
+          
+          {/* Legacy Measurement Tool */}
           <MeasurementTool
-            isActive={measurementToolActive}
+            isActive={false} // Disabled in favor of enhanced tool
             scale={canvasState.scale}
             pixelsPerFoot={PIXELS_PER_FOOT}
             onMeasurementComplete={(measurement) => {
@@ -835,6 +1198,21 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
         calculatedDistance={distanceInputData?.calculatedDistance || 0}
         onSubmit={distanceInputData?.onSubmit || (() => {})}
         onCancel={distanceInputData?.onCancel || (() => {})}
+      />
+      
+      {/* Enhanced Calibrate Dialog */}
+      <EnhancedCalibrateDialog
+        isOpen={showCalibrateDialog}
+        calculatedDistance={currentMeasurement && currentMeasurement.firstPoint && currentMeasurement.secondPoint 
+          ? Math.sqrt(
+              Math.pow(currentMeasurement.secondPoint.x - currentMeasurement.firstPoint.x, 2) +
+              Math.pow(currentMeasurement.secondPoint.y - currentMeasurement.firstPoint.y, 2)
+            ) / PIXELS_PER_FOOT
+          : 0
+        }
+        onSubmit={handleCalibrateSubmit}
+        onEdit={handleCalibrateEdit}
+        onCancel={handleCalibrateCancel}
       />
     </div>
   )
