@@ -569,8 +569,8 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             </div>
                             <div className="text-xs text-gray-500">
                               {currentDims.shape === 'circle' 
-                                ? `⭕ ${(currentDims as CircularDimensions).radius}&apos; radius${currentDims.depth ? ` × ${currentDims.depth}&apos;` : ''}`
-                                : `⬜ ${(currentDims as RectangularDimensions).width}&apos; × ${(currentDims as RectangularDimensions).height}&apos;${currentDims.depth ? ` × ${currentDims.depth}&apos;` : ''}`
+                                ? `${(currentDims as CircularDimensions).radius} radius${currentDims.depth ? ` × ${currentDims.depth}` : ''}`
+                                : `${(currentDims as RectangularDimensions).width} × ${(currentDims as RectangularDimensions).height}${currentDims.depth ? ` × ${currentDims.depth}` : ''}`
                               }
                             </div>
                           </div>
@@ -940,8 +940,8 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             <span className="font-medium">Dimensions:</span>
                             <br />
                             {currentDims.shape === 'circle' 
-                              ? `⭕ ${(currentDims as CircularDimensions).radius}&apos; radius${currentDims.depth ? ` × ${currentDims.depth}&apos;` : ''}`
-                              : `⬜ ${(currentDims as RectangularDimensions).width}&apos; × ${(currentDims as RectangularDimensions).height}&apos;${currentDims.depth ? ` × ${currentDims.depth}&apos;` : ''}`
+                              ? `⭕ ${(currentDims as CircularDimensions).radius} radius${currentDims.depth ? ` × ${currentDims.depth}` : ''}`
+                              : `⬜ ${(currentDims as RectangularDimensions).width} × ${(currentDims as RectangularDimensions).height}${currentDims.depth ? ` × ${currentDims.depth}` : ''}`
                             }
                             {customDims && <span className="text-blue-600"> (custom)</span>}
                           </div>
@@ -980,7 +980,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             <div>
                               <span className="font-medium">Height:</span>
                               <br />
-                              {customVerticalHeight[equipment.id] || equipment.verticalHeight}&apos; tall
+                              {customVerticalHeight[equipment.id] || equipment.verticalHeight} tall
                               {customVerticalHeight[equipment.id] && <span className="text-blue-600"> (custom)</span>}
                             </div>
                           )}
@@ -990,7 +990,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             <div>
                               <span className="font-medium">Ride Clearance:</span>
                               <br />
-                              {customRideClearing[equipment.id] || equipment.rideClearing}&apos; clearance
+                              {customRideClearing[equipment.id] || equipment.rideClearing} clearance
                               {customRideClearing[equipment.id] && <span className="text-blue-600"> (custom)</span>}
                             </div>
                           )}

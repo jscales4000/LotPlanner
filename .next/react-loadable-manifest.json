@@ -1,0 +1,45 @@
+{
+  "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> canvg": {
+    "id": 34137,
+    "files": [
+      "static/chunks/bc98253f.ce50eee70995d8cd.js",
+      "static/chunks/121.7dd7a0f45cf3719a.js"
+    ]
+  },
+  "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> dompurify": {
+    "id": 10822,
+    "files": [
+      "static/chunks/822.d1eebe7df2d8fc0a.js"
+    ]
+  },
+  "..\\node_modules\\jspdf\\dist\\jspdf.es.min.js -> html2canvas": {
+    "id": 52699,
+    "files": []
+  },
+  "..\\node_modules\\next\\dist\\client\\index.js -> ../pages/_app": {
+    "id": 90472,
+    "files": [
+      "static/chunks/472.2c08b965bd9148e2.js"
+    ]
+  },
+  "..\\node_modules\\next\\dist\\client\\index.js -> ../pages/_error": {
+    "id": 99341,
+    "files": [
+      "static/chunks/341.e70881eb548cce62.js"
+    ]
+  },
+  "app\\canvas\\page.tsx -> @/components/canvas/CanvasEditor": {
+    "id": 13249,
+    "files": [
+      "static/chunks/bf091bbe.8876992e2ce3736f.js",
+      "static/chunks/310.24fddbacf9969cd8.js",
+      "static/chunks/249.71937ad321ce33fa.js"
+    ]
+  },
+  "app\\canvas\\page.tsx -> @/components/canvas/KeyboardHandler": {
+    "id": 47744,
+    "files": [
+      "static/chunks/744.5586f518b593eadf.js"
+    ]
+  }
+}
