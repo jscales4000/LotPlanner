@@ -416,7 +416,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   // If collapsed, show minimal category icon view
   if (isCollapsed) {
     return (
-      <div className={`bg-white border-r border-gray-200 flex flex-col ${className}`}>
+      <div className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col ${className}`}>
         <div className="p-2">
           <div className="text-center mb-2">
             <span className="text-lg">🦎</span>
@@ -428,7 +428,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
               className={`w-full p-2 rounded text-xs transition-colors ${
                 selectedCategory === 'all'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300'
               }`}
               title="All Equipment"
             >
@@ -443,7 +443,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                 className={`w-full p-2 rounded text-xs transition-colors ${
                   selectedCategory === category
                     ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300'
                 }`}
                 title={categoryLabels[category]}
               >
@@ -457,22 +457,22 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   }
 
   return (
-    <div className={`bg-white border-r border-gray-200 flex flex-col ${className}`} style={style}>
+    <div className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col ${className}`} style={style}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900 mb-3">Equipment Library</h3>
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Equipment Library</h3>
         
         {/* Equipment Management Buttons */}
         <div className="mb-3 space-y-2">
           <button
             onClick={addNewEquipment}
-            className="w-full px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+            className="w-full px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           >
             ➕ Add New Equipment
           </button>
           <button
             onClick={() => setLibraryManagerOpen(true)}
-            className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             📚 Manage Library
           </button>
@@ -485,7 +485,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
             placeholder="Search equipment..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
 
@@ -496,7 +496,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
             className={`px-2 py-1 text-xs rounded ${
               selectedCategory === 'all'
                 ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
             }`}
           >
             All
@@ -524,12 +524,12 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-2">
           {filteredEquipment.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
               <p>No equipment found</p>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="text-blue-500 hover:text-blue-700 text-sm mt-2"
+                  className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm mt-2"
                 >
                   Clear search
                 </button>
@@ -550,7 +550,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
               return (
                 <div
                   key={equipment.id}
-                  className="border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div
                     className="p-3 cursor-pointer"
@@ -563,11 +563,11 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             {categoryIcons[currentCategory]}
                           </span>
                           <div>
-                            <div className="font-medium text-sm text-gray-900">
+                            <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
                               {currentName}
-                              {hasCustomizations && <span className="text-blue-600 ml-1">*</span>}
+                              {hasCustomizations && <span className="text-blue-600 dark:text-blue-400 ml-1">*</span>}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
                               {currentDims.shape === 'circle' 
                                 ? `${(currentDims as CircularDimensions).radius} radius${currentDims.depth ? ` × ${currentDims.depth}` : ''}`
                                 : `${(currentDims as RectangularDimensions).width} × ${(currentDims as RectangularDimensions).height}${currentDims.depth ? ` × ${currentDims.depth}` : ''}`

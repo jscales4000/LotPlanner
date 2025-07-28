@@ -12,6 +12,7 @@ import ProjectManagerModal from '@/components/project/ProjectManagerModal'
 import ExportImportModal from '@/components/project/ExportImportModal'
 import PDFExportModal from '@/components/export/PDFExportModal'
 import PropertiesModal from '@/components/canvas/PropertiesModal'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 // Dynamically import CanvasEditor to avoid SSR issues with Konva
 const CanvasEditor = dynamic(
@@ -311,44 +312,45 @@ export default function CanvasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <span className="text-2xl mr-3">🦎</span>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Lot Lizard</h1>
-                <p className="text-sm text-gray-600">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Lot Lizard</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {currentProject ? currentProject.metadata.name : 'Carnival Lot Planning'}
                   {hasUnsavedChanges && <span className="text-orange-500 ml-2">• Unsaved changes</span>}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <button
                 onClick={() => setPropertiesModalOpen(true)}
-                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                className="px-3 py-2 border border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
                 title="Canvas Properties & Settings"
               >
                 ⚙️ Settings
               </button>
               <button 
                 onClick={() => setProjectManagerModalOpen(true)}
-                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                className="px-3 py-2 border border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
               >
                 📁 Projects
               </button>
               <button
                 onClick={() => setExportImportModalOpen(true)}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 transition-colors"
               >
                 📁 Export/Import
               </button>
               <button
                 onClick={() => setPdfExportModalOpen(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
               >
                 📄 Export PDF
               </button>
@@ -362,8 +364,8 @@ export default function CanvasPage() {
                 }}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   hasUnsavedChanges 
-                    ? 'bg-orange-600 text-white hover:bg-orange-700' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-orange-600 text-white hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800'
                 }`}
               >
                 💾 {currentProject ? 'Save' : 'Save Project'}
