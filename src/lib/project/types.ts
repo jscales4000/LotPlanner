@@ -1,4 +1,4 @@
-import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
+import { PlacedEquipment, EquipmentItem, EquipmentDimensions, EquipmentClearance, EquipmentCategory } from '@/lib/equipment/types'
 import { BackgroundImage } from '@/components/canvas/BackgroundLayer'
 
 export interface ProjectMetadata {
@@ -21,6 +21,20 @@ export interface CanvasSettings {
   measurementToolActive: boolean
 }
 
+export interface EquipmentLibraryState {
+  customDimensions: Record<string, EquipmentDimensions>
+  customCategories: Record<string, EquipmentCategory>
+  customNames: Record<string, string>
+  customWeight: Record<string, number>
+  customCapacity: Record<string, number>
+  customTurnAroundTime: Record<string, number>
+  customVerticalHeight: Record<string, number>
+  customRideClearing: Record<string, number>
+  customClearances: Record<string, EquipmentClearance>
+  newEquipmentItems: EquipmentItem[]
+  newEquipmentCounter: number
+}
+
 export interface ProjectData {
   metadata: ProjectMetadata
   canvasSettings: CanvasSettings
@@ -28,6 +42,7 @@ export interface ProjectData {
   backgroundImages: BackgroundImage[]
   equipmentDefinitions: EquipmentItem[]
   customEquipmentCount: number
+  equipmentLibraryState?: EquipmentLibraryState
 }
 
 export interface ExportOptions {

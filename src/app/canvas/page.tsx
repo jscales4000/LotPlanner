@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { PlacedEquipment, EquipmentItem } from '@/lib/equipment/types'
 import { BackgroundImage } from '@/components/canvas/BackgroundLayer'
-import { ProjectData, ImportResult } from '@/lib/project/types'
+import { ProjectData, ImportResult, EquipmentLibraryState } from '@/lib/project/types'
 import { ProjectManager } from '@/lib/project/projectManager'
 import EquipmentLibrary from '@/components/equipment/EquipmentLibrary'
 import ProjectManagerModal from '@/components/project/ProjectManagerModal'
@@ -40,6 +40,7 @@ export default function CanvasPage() {
   const [canvasElement, setCanvasElement] = useState<HTMLElement | null>(null)
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [propertiesModalOpen, setPropertiesModalOpen] = useState(false)
+  const [equipmentLibraryState, setEquipmentLibraryState] = useState<EquipmentLibraryState | null>(null)
 
   // Auto-save functionality
   useEffect(() => {
@@ -87,6 +88,7 @@ export default function CanvasPage() {
     setBackgroundImages([])
     setEquipmentDefinitions([])
     setCustomEquipmentCount(0)
+    setEquipmentLibraryState(null)
     setSelectedEquipmentIds([])
     setHasUnsavedChanges(false)
     ProjectManager.clearAutoSave()
@@ -115,7 +117,8 @@ export default function CanvasPage() {
       placedEquipment,
       backgroundImages,
       equipmentDefinitions,
-      customEquipmentCount
+      customEquipmentCount,
+      equipmentLibraryState: equipmentLibraryState || undefined
     }
 
     const result = ProjectManager.saveProject(projectData)
@@ -134,6 +137,7 @@ export default function CanvasPage() {
     setBackgroundImages(projectData.backgroundImages)
     setEquipmentDefinitions(projectData.equipmentDefinitions)
     setCustomEquipmentCount(projectData.customEquipmentCount)
+    setEquipmentLibraryState(projectData.equipmentLibraryState || null)
     setSelectedEquipmentIds([])
     setHasUnsavedChanges(false)
     ProjectManager.clearAutoSave()
@@ -389,6 +393,8 @@ export default function CanvasPage() {
             key="equipment-library"
             onEquipmentSelect={handleEquipmentSelect}
             onEquipmentDefinitionsChange={handleEquipmentDefinitionsChange}
+            onLibraryStateChange={setEquipmentLibraryState}
+            initialLibraryState={equipmentLibraryState || undefined}
             className={`h-full transition-all duration-300 ${sidebarExpanded ? 'w-[340px]' : 'w-12 overflow-hidden'}`}
             isCollapsed={!sidebarExpanded}
           />

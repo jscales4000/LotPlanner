@@ -3,12 +3,15 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { EquipmentItem, EquipmentCategory, EquipmentDimensions, EquipmentShape, RectangularDimensions, CircularDimensions, EquipmentClearance } from '@/lib/equipment/types'
 import { organizedLibrary, searchEquipment } from '@/lib/equipment/library'
+import { EquipmentLibraryState } from '@/lib/project/types'
 import ClearanceEditor from '@/components/canvas/ClearanceEditor'
 import EquipmentLibraryManager from './EquipmentLibraryManager'
 
 interface EquipmentLibraryProps {
   onEquipmentSelect: (equipment: EquipmentItem) => void
   onEquipmentDefinitionsChange?: (definitions: EquipmentItem[]) => void
+  onLibraryStateChange?: (state: EquipmentLibraryState) => void
+  initialLibraryState?: EquipmentLibraryState
   className?: string
   style?: React.CSSProperties
   isCollapsed?: boolean
@@ -41,6 +44,8 @@ const categoryIcons: Record<EquipmentCategory, string> = {
 const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   onEquipmentSelect,
   onEquipmentDefinitionsChange,
+  onLibraryStateChange,
+  initialLibraryState,
   className = '',
   style,
   isCollapsed = false
@@ -63,6 +68,56 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   const [newEquipmentItems, setNewEquipmentItems] = useState<EquipmentItem[]>([])
   const [newEquipmentCounter, setNewEquipmentCounter] = useState(0)
   const [libraryManagerOpen, setLibraryManagerOpen] = useState(false)
+
+  // Initialize state from saved project data
+  useEffect(() => {
+    if (initialLibraryState) {
+      setCustomDimensions(initialLibraryState.customDimensions || {})
+      setCustomCategories(initialLibraryState.customCategories || {})
+      setCustomNames(initialLibraryState.customNames || {})
+      setCustomWeight(initialLibraryState.customWeight || {})
+      setCustomCapacity(initialLibraryState.customCapacity || {})
+      setCustomTurnAroundTime(initialLibraryState.customTurnAroundTime || {})
+      setCustomVerticalHeight(initialLibraryState.customVerticalHeight || {})
+      setCustomRideClearing(initialLibraryState.customRideClearing || {})
+      setCustomClearances(initialLibraryState.customClearances || {})
+      setNewEquipmentItems(initialLibraryState.newEquipmentItems || [])
+      setNewEquipmentCounter(initialLibraryState.newEquipmentCounter || 0)
+    }
+  }, [initialLibraryState])
+
+  // Notify parent component when library state changes
+  useEffect(() => {
+    if (onLibraryStateChange) {
+      const currentState: EquipmentLibraryState = {
+        customDimensions,
+        customCategories,
+        customNames,
+        customWeight,
+        customCapacity,
+        customTurnAroundTime,
+        customVerticalHeight,
+        customRideClearing,
+        customClearances,
+        newEquipmentItems,
+        newEquipmentCounter
+      }
+      onLibraryStateChange(currentState)
+    }
+  }, [
+    customDimensions,
+    customCategories,
+    customNames,
+    customWeight,
+    customCapacity,
+    customTurnAroundTime,
+    customVerticalHeight,
+    customRideClearing,
+    customClearances,
+    newEquipmentItems,
+    newEquipmentCounter,
+    onLibraryStateChange
+  ])
 
   // Memoize all equipment definitions to prevent unnecessary updates
   const allEquipmentDefinitions = useMemo(() => {
