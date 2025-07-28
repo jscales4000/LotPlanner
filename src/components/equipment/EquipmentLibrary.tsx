@@ -10,6 +10,8 @@ interface EquipmentLibraryProps {
   onEquipmentSelect: (equipment: EquipmentItem) => void
   onEquipmentDefinitionsChange?: (definitions: EquipmentItem[]) => void
   className?: string
+  style?: React.CSSProperties
+  isCollapsed?: boolean
 }
 
 const categoryLabels: Record<EquipmentCategory, string> = {
@@ -39,7 +41,9 @@ const categoryIcons: Record<EquipmentCategory, string> = {
 const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   onEquipmentSelect,
   onEquipmentDefinitionsChange,
-  className = ''
+  className = '',
+  style,
+  isCollapsed = false
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<EquipmentCategory | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -77,14 +81,10 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
 
     if (searchQuery.trim()) {
       items = searchEquipment(searchQuery)
-    } else if (selectedCategory === 'all') {
-      items = Object.values(organizedLibrary).flat()
     } else {
-      items = organizedLibrary[selectedCategory] || []
+      // Get all equipment from organized library and new equipment
+      items = [...Object.values(organizedLibrary).flat(), ...newEquipmentItems]
     }
-
-    // Add new equipment items
-    items = [...items, ...newEquipmentItems]
 
     // Filter by selected category if not 'all'
     if (selectedCategory !== 'all') {
@@ -338,9 +338,71 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
   }
 
   const categories = Object.keys(organizedLibrary) as EquipmentCategory[]
+  
+  // Get dynamic categories from current equipment (including custom categories)
+  const dynamicCategories = useMemo(() => {
+    const categorySet = new Set<EquipmentCategory>()
+    
+    // Add categories from organized library
+    categories.forEach(cat => categorySet.add(cat))
+    
+    // Add custom categories from equipment
+    Object.values(customCategories).forEach(cat => categorySet.add(cat))
+    
+    // Add categories from new equipment items
+    newEquipmentItems.forEach(item => {
+      const category = customCategories[item.id] || item.category
+      categorySet.add(category)
+    })
+    
+    return Array.from(categorySet).sort()
+  }, [categories, customCategories, newEquipmentItems])
+
+  // If collapsed, show minimal category icon view
+  if (isCollapsed) {
+    return (
+      <div className={`bg-white border-r border-gray-200 flex flex-col ${className}`}>
+        <div className="p-2">
+          <div className="text-center mb-2">
+            <span className="text-lg">🦎</span>
+          </div>
+          <div className="space-y-1">
+            {/* All categories button */}
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`w-full p-2 rounded text-xs transition-colors ${
+                selectedCategory === 'all'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+              title="All Equipment"
+            >
+              📦
+            </button>
+            
+            {/* Dynamic category icons */}
+            {dynamicCategories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`w-full p-2 rounded text-xs transition-colors ${
+                  selectedCategory === category
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
+                title={categoryLabels[category]}
+              >
+                {categoryIcons[category]}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className={`bg-white border-r border-gray-200 flex flex-col ${className}`}>
+    <div className={`bg-white border-r border-gray-200 flex flex-col ${className}`} style={style}>
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <h3 className="font-semibold text-gray-900 mb-3">Equipment Library</h3>
@@ -384,7 +446,7 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
           >
             All
           </button>
-          {categories.map(category => (
+          {dynamicCategories.map(category => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
@@ -463,6 +525,10 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
+                            // Auto-open dropdown if not already expanded
+                            if (!isExpanded) {
+                              toggleItemExpanded(equipment.id)
+                            }
                             toggleDimensionEditing(equipment.id)
                           }}
                           className={`p-1 hover:bg-gray-200 rounded text-xs ${
@@ -477,21 +543,25 @@ const EquipmentLibrary: React.FC<EquipmentLibraryProps> = ({
                             e.stopPropagation()
                             toggleItemExpanded(equipment.id)
                           }}
-                          className="p-1 hover:bg-gray-200 rounded"
+                          className={`p-1 rounded transition-colors ${
+                            isExpanded 
+                              ? 'bg-blue-100 hover:bg-blue-200 text-blue-700' 
+                              : 'hover:bg-gray-200 text-gray-700'
+                          }`}
                           title="Toggle details"
                         >
                           <svg
-                            className={`w-4 h-4 transform transition-transform ${
+                            className={`w-4 h-4 transform transition-all duration-200 ${
                               isExpanded ? 'rotate-180' : ''
                             }`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            strokeWidth={2.5}
                           >
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              strokeWidth={2}
                               d="M19 9l-7 7-7-7"
                             />
                           </svg>

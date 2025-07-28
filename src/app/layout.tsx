@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Site Planner - Spatial Layout Tool',
-  description: 'Professional spatial layout tool for outdoor venues, lots, rodeos, and parks',
+  title: 'Lot Lizard - Carnival Lot Planning',
+  description: 'Carnival lot planning tool for fairs, rodeos, and outdoor events with satellite imagery and equipment management',
 }
 
 export default function RootLayout({

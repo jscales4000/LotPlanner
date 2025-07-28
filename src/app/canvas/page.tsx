@@ -11,6 +11,7 @@ import EquipmentLibrary from '@/components/equipment/EquipmentLibrary'
 import ProjectManagerModal from '@/components/project/ProjectManagerModal'
 import ExportImportModal from '@/components/project/ExportImportModal'
 import PDFExportModal from '@/components/export/PDFExportModal'
+import PropertiesModal from '@/components/canvas/PropertiesModal'
 
 // Dynamically import CanvasEditor to avoid SSR issues with Konva
 const CanvasEditor = dynamic(
@@ -37,6 +38,8 @@ export default function CanvasPage() {
   const [customEquipmentCount, setCustomEquipmentCount] = useState(0)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [canvasElement, setCanvasElement] = useState<HTMLElement | null>(null)
+  const [sidebarExpanded, setSidebarExpanded] = useState(true)
+  const [propertiesModalOpen, setPropertiesModalOpen] = useState(false)
 
   // Auto-save functionality
   useEffect(() => {
@@ -309,14 +312,24 @@ export default function CanvasPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Site Planner</h1>
-              <p className="text-sm text-gray-600">
-                {currentProject ? currentProject.metadata.name : 'Canvas Editor'}
-                {hasUnsavedChanges && <span className="text-orange-500 ml-2">• Unsaved changes</span>}
-              </p>
+            <div className="flex items-center">
+              <span className="text-2xl mr-3">🦎</span>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Lot Lizard</h1>
+                <p className="text-sm text-gray-600">
+                  {currentProject ? currentProject.metadata.name : 'Carnival Lot Planning'}
+                  {hasUnsavedChanges && <span className="text-orange-500 ml-2">• Unsaved changes</span>}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPropertiesModalOpen(true)}
+                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                title="Canvas Properties & Settings"
+              >
+                ⚙️ Settings
+              </button>
               <button 
                 onClick={() => setProjectManagerModalOpen(true)}
                 className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
@@ -359,12 +372,27 @@ export default function CanvasPage() {
       {/* Main Content */}
       <div className="flex h-[calc(100vh-80px)]">
         {/* Left Sidebar - Equipment Library */}
-        <EquipmentLibrary
-          key="equipment-library"
-          onEquipmentSelect={handleEquipmentSelect}
-          onEquipmentDefinitionsChange={handleEquipmentDefinitionsChange}
-          className="w-64"
-        />
+        <div className={`relative transition-all duration-300 ${sidebarExpanded ? 'w-[340px]' : 'w-12'}`}>
+          {/* Sidebar Toggle Button */}
+          <button
+            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+            className="absolute top-4 -right-3 z-20 bg-white border border-gray-300 rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors"
+            title={sidebarExpanded ? 'Collapse Equipment Library' : 'Expand Equipment Library'}
+          >
+            <span className="text-xs text-gray-600">
+              {sidebarExpanded ? '◀' : '▶'}
+            </span>
+          </button>
+          
+          {/* Equipment Library */}
+          <EquipmentLibrary
+            key="equipment-library"
+            onEquipmentSelect={handleEquipmentSelect}
+            onEquipmentDefinitionsChange={handleEquipmentDefinitionsChange}
+            className={`h-full transition-all duration-300 ${sidebarExpanded ? 'w-[340px]' : 'w-12 overflow-hidden'}`}
+            isCollapsed={!sidebarExpanded}
+          />
+        </div>
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col">
@@ -398,47 +426,7 @@ export default function CanvasPage() {
           />
         </div>
 
-        {/* Right Sidebar - Properties */}
-        <div className="w-64 bg-white border-l border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-4">Properties</h3>
-          <div className="space-y-4">
-            {/* Canvas Information */}
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Canvas Info</h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <div><span className="font-medium">Size:</span> 1,000,000 sq ft</div>
-                <div><span className="font-medium">Dimensions:</span> 1000&apos; × 1000&apos;</div>
-                <div><span className="font-medium">Scale:</span> 10 px/ft</div>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Canvas Scale
-              </label>
-              <div className="text-sm text-gray-600">10 pixels = 1 foot</div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Grid Size
-              </label>
-              <input 
-                type="number" 
-                defaultValue={50}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white placeholder-gray-500"
-                placeholder="Grid size in pixels"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Background
-              </label>
-              <button className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
-                Upload Image
-              </button>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Project Management Modals */}
@@ -470,6 +458,11 @@ export default function CanvasPage() {
         backgroundImages={backgroundImages}
         equipmentDefinitions={equipmentDefinitions}
         projectName={currentProject?.metadata.name || 'lot-planner-layout'}
+      />
+
+      <PropertiesModal
+        isOpen={propertiesModalOpen}
+        onClose={() => setPropertiesModalOpen(false)}
       />
     </div>
   )
